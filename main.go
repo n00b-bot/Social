@@ -24,6 +24,7 @@ func main() {
 		return
 	}
 	codec := branca.NewBranca("12345678123456781234567812345678")
+	codec.SetTTL(uint32(service.TokenLifespan.Seconds()))
 	s := service.New(db, codec)
 	h := handler.New(s)
 	http.ListenAndServe(":3000", h)
