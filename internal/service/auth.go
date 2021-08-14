@@ -55,8 +55,9 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	if !ok {
 		return user, ErrUnauthorized
 	}
-	query := "SELECT id,username FROM users WHERE id=?"
-	err := s.db.QueryRowContext(ctx, query, uid).Scan(&user.ID, &user.Username)
+	query := "SELECT username FROM users WHERE id=?"
+	err := s.db.QueryRowContext(ctx, query, uid).Scan(&user.Username)
+	user.ID = int64(uid)
 	if err != nil {
 		return user, err
 	}

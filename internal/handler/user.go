@@ -35,3 +35,15 @@ func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, out, 200)
 }
+
+func (h *handler) user(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	username := way.Param(ctx, "username")
+	out, err := h.User(ctx, username)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, out, 200)
+
+}

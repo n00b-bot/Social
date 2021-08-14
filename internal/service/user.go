@@ -17,6 +17,16 @@ type User struct {
 	Username string
 }
 
+type UserProfile struct {
+	User
+	Email          string
+	FollowersCount int
+	FolloweesCount int
+	Me             bool
+	Following      bool
+	Followeed      bool
+}
+
 var KeyAuthUserID = "auth_user_id"
 var (
 	ErrUserNotFound    = errors.New("User not found")
@@ -106,6 +116,36 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	out.Following = !out.Following
 	if out.Following {
 
+	}
+	return out, nil
+
+}
+
+func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
+	var out UserProfile
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	args := []interface{}{}
+	dest := []interface{}{&out.ID, &out.Username, &out.Email, &out.FolloweesCount, &out.FollowersCount}
+	query := "SELECT id,username, email,followees_count,followers_count "
+	if ok {
+		query += ", followers.follower_id IS NOT NULL as Following," +
+			"followees.followee_id IS NOT NULL AS Followeed "
+		dest = append(dest, &out.Following, &out.Followeed)
+	}
+	query += " FROM Users "
+	if ok {
+		query += "LEFT JOIN follows AS followers ON followers.follower_id = ? AND followers.followee_id = users.id " +
+			" LEFT JOIN follows AS followees ON followees.follower_id =users.id AND followees.followee_id = ?"
+		args = append(args, uid, uid, username)
+	}
+	query += " WHERE username = ?"
+	if err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...); err != nil {
+		return out, err
+	}
+	out.Me = ok && int64(uid) == out.ID
+	if !ok || int64(uid) != out.ID {
+		out.ID = 0
+		out.Email = ""
 	}
 	return out, nil
 
