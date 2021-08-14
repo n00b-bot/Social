@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"network/internal/service"
 	"strings"
@@ -39,7 +38,6 @@ func (h *handler) AuthMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		fmt.Println(token)
 		token = token[7:]
 		id, err := h.TokenDecode(token)
 		if err != nil {
