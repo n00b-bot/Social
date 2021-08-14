@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/matryer/way"
 )
@@ -46,4 +47,17 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, out, 200)
 
+}
+
+func (h *handler) users(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	search := q.Get("search")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")
+	uu, err := h.Users(r.Context(), search, first, after)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, uu, 200)
 }

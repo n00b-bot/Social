@@ -143,10 +143,68 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		return out, err
 	}
 	out.Me = ok && int64(uid) == out.ID
-	if !ok || int64(uid) != out.ID {
+	if out.Me {
 		out.ID = 0
 		out.Email = ""
 	}
 	return out, nil
 
+}
+
+func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	first = normalizePageSize(first)
+	query, args, err := buildQuery(`
+		SELECT id, email, username, followers_count, followees_count
+		{{ if .auth }}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{ end }}
+		FROM users
+		{{ if .auth }}
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @kid
+		{{ end }}
+		{{ if or .search .after }}WHERE{{ end }}
+		{{ if .search }}username LIKE '%' || @search || '%'{{ end }}
+		{{ if and .search .after }}AND{{ end }}
+		{{ if .after }}username > @after{{ end }}
+		ORDER BY username ASC
+		LIMIT @first`, map[string]interface{}{
+		"auth":   ok,
+		"uid":    uid,
+		"kid":    uid,
+		"search": search,
+		"first":  first,
+		"after":  after,
+	})
+	fmt.Print(query)
+	row, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+	uu := make([]UserProfile, 0, first)
+	for row.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		if ok {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+		if err := row.Scan(dest...); err != nil {
+			return uu, err
+		}
+		u.Me = ok && int64(uid) == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+		uu = append(uu, u)
+	}
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	return uu, nil
 }
