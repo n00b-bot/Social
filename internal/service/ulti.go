@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -23,6 +25,7 @@ func isUniqueViolation(err error) bool {
 }
 
 func buildQuery(text string, data map[string]interface{}) (string, []interface{}, error) {
+	var t *template.Template
 	t, ok := queriesCache[text]
 	if !ok {
 		var err error
@@ -38,16 +41,23 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 	if err := t.Execute(&wr, data); err != nil {
 		return "", nil, fmt.Errorf("could not apply sql query data: %w", err)
 	}
-
 	query := wr.String()
-	args := []interface{}{}
-	for key, val := range data {
+	var ints []int
+	for key, _ := range data {
 		if !strings.Contains(query, "@"+key) {
 			continue
-		}
 
-		args = append(args, val)
+		}
+		i, _ := strconv.Atoi(key)
+		ints = append(ints, i)
 		query = strings.ReplaceAll(query, "@"+key, "?")
+	}
+	sort.Ints(ints)
+	var args []interface{}
+	for _, key := range ints {
+
+		fmt.Println(data[strconv.Itoa(key)])
+		args = append(args, data[strconv.Itoa(key)])
 	}
 	return query, args, nil
 }

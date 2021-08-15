@@ -154,6 +154,14 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
 	first = normalizePageSize(first)
+	ints := map[string]interface{}{
+		"auth": ok,
+		"1":    uid,
+		"2":    uid,
+		"3":    search,
+		"4":    after,
+		"5":    first}
+
 	query, args, err := buildQuery(`
 		SELECT id, email, username, followers_count, followees_count
 		{{ if .auth }}
@@ -163,24 +171,17 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		FROM users
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @uid AND followers.followee_id = users.id
+			ON followers.follower_id = @1 AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @kid
+			ON followees.follower_id = users.id AND followees.followee_id = @2
 		{{ end }}
-		{{ if or .search .after }}WHERE{{ end }}
-		{{ if .search }}username LIKE '%' || @search || '%'{{ end }}
-		{{ if and .search .after }}AND{{ end }}
-		{{ if .after }}username > @after{{ end }}
+		{{ if or .3 .4 }}WHERE{{ end }}
+		{{ if .3 }} username LIKE concat('%', @3 ,'%'){{ end }}
+		{{ if and .3 .4 }}AND{{ end }}
+		{{ if .3 }}username > @4 {{ end }}
 		ORDER BY username ASC
-		LIMIT @first`, map[string]interface{}{
-		"auth":   ok,
-		"uid":    uid,
-		"kid":    uid,
-		"search": search,
-		"first":  first,
-		"after":  after,
-	})
-	fmt.Print(query)
+		LIMIT @5`, ints)
+
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
