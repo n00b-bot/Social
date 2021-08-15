@@ -17,6 +17,7 @@ func New(s *service.Service) http.Handler {
 	api.HandleFunc("GET", "/users/:username/profile", h.user)
 	api.HandleFunc("POST", "/login", h.login)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
+	api.HandleFunc("PUT", "/auth_user/avatar", h.updateAvatar)
 	api.HandleFunc("GET", "/users/all", h.users)
 	api.HandleFunc("POST", "/users", h.createUser)
 	api.HandleFunc("POST", "/users/:username/followers", h.followers)

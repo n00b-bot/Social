@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"network/internal/service"
 	"strconv"
 
 	"github.com/matryer/way"
@@ -88,4 +89,16 @@ func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, uu, 200)
+}
+func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	reader := http.MaxBytesReader(w, r.Body, int64(service.MaxAvatarSize))
+	defer reader.Close()
+	avatarUrl, err := h.UpdateAvatar(r.Context(), reader)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, avatarUrl, 200)
+
 }

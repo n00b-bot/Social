@@ -2,9 +2,19 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
+	"os"
+	"path"
 	"strings"
+
+	"github.com/disintegration/imaging"
+	gonanoid "github.com/matoous/go-nanoid"
 )
 
 type ToggleFollow struct {
@@ -13,8 +23,9 @@ type ToggleFollow struct {
 }
 
 type User struct {
-	ID       int64
-	Username string
+	ID        int64
+	Username  string
+	AvatarURL *string
 }
 
 type UserProfile struct {
@@ -27,11 +38,17 @@ type UserProfile struct {
 	Followeed      bool
 }
 
-var KeyAuthUserID = "auth_user_id"
+var (
+	MaxAvatarSize = 5 << 20
+	KeyAuthUserID = "auth_user_id"
+	AvatarDir     = path.Join("web", "static", "img", "avatar")
+)
+
 var (
 	ErrUserNotFound    = errors.New("User not found")
 	ErrUserTaken       = errors.New("User has been taken by another user")
 	ErrForbiddenFollow = errors.New("Forbidden follow yourself")
+	ErrAvatarType      = errors.New("Avatar type is unsupported")
 )
 
 func (s *Service) CreateUser(ctx context.Context, username, email string) error {
@@ -323,4 +340,58 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		return nil, err
 	}
 	return uu, nil
+}
+
+func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return "", ErrUnauthorized
+	}
+	img, format, err := image.Decode(r)
+	if err != nil {
+		fmt.Print("1")
+		return "", err
+	}
+	fmt.Print(format)
+	if format != "png" && format != "jpeg" {
+		return "", ErrAvatarType
+	}
+	avatar, err := gonanoid.Nanoid()
+	if err != nil {
+		return "", err
+	}
+	if format == "png" {
+		avatar += ".png"
+	} else {
+		avatar += ".jpg"
+	}
+	avatarPath := path.Join(AvatarDir, avatar)
+	f, err := os.Create(avatarPath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
+	if format == "png" {
+		err = png.Encode(f, img)
+	} else {
+		err = jpeg.Encode(f, img, nil)
+	}
+	if err != nil {
+		return "", err
+	}
+	var oldAvartar sql.NullString
+	if err = s.db.QueryRowContext(ctx, `SELECT avatar FROM users WHERE id = ?`, uid).Scan(&oldAvartar); err != nil {
+		defer os.Remove(avatarPath)
+		return "", err
+	}
+	if oldAvartar.Valid {
+		fmt.Print(oldAvartar.String)
+		if err = os.Remove(path.Join(AvatarDir, oldAvartar.String)); err != nil {
+			fmt.Print(err)
+		}
+	}
+	s.db.ExecContext(ctx, `UPDATE users SET avatar=? WHERE id=?`, avatar, uid)
+
+	return "http://localhost:3000/web/static/img/avatar" + avatar, nil
 }
