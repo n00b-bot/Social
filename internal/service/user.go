@@ -240,7 +240,6 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		ORDER BY username ASC
 		LIMIT @5`, ints)
 
-	fmt.Println(query)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -298,8 +297,6 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		{{ if  .4 }}AND username > @4 {{ end }}
 		ORDER BY username ASC
 		LIMIT @5`, ints)
-	fmt.Println(query)
-	fmt.Println(args)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
