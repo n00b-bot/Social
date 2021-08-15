@@ -61,3 +61,31 @@ func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, uu, 200)
 }
+
+func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	username := way.Param(ctx, "username")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")
+	uu, err := h.Follwers(r.Context(), username, first, after)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, uu, 200)
+}
+
+func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	username := way.Param(ctx, "username")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")
+	uu, err := h.Follwees(r.Context(), username, first, after)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, uu, 200)
+}

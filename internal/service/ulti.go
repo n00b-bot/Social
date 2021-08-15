@@ -56,7 +56,6 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 	var args []interface{}
 	for _, key := range ints {
 
-		fmt.Println(data[strconv.Itoa(key)])
 		args = append(args, data[strconv.Itoa(key)])
 	}
 	return query, args, nil

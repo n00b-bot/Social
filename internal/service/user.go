@@ -209,3 +209,121 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	}
 	return uu, nil
 }
+
+func (s *Service) Follwers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	first = normalizePageSize(first)
+	ints := map[string]interface{}{
+		"auth": ok,
+		"1":    uid,
+		"2":    uid,
+		"3":    username,
+		"4":    after,
+		"5":    first}
+
+	query, args, err := buildQuery(`
+		SELECT id, email, username, followers_count, followees_count
+		{{ if .auth }}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{ end }}
+		FROM follows
+		INNER JOIN users on follower_id=users.id
+		{{ if .auth }}
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @1 AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @2
+		{{ end }}
+		WHERE follows.followee_id =(SELECT id from users where username = @3)
+		{{ if  .4 }}AND username > @4 {{ end }}
+		ORDER BY username ASC
+		LIMIT @5`, ints)
+
+	fmt.Println(query)
+	row, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+	uu := make([]UserProfile, 0, first)
+	for row.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		if ok {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+		if err := row.Scan(dest...); err != nil {
+			return uu, err
+		}
+		u.Me = ok && int64(uid) == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+		uu = append(uu, u)
+	}
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	return uu, nil
+}
+
+func (s *Service) Follwees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	first = normalizePageSize(first)
+	ints := map[string]interface{}{
+		"auth": ok,
+		"1":    uid,
+		"2":    uid,
+		"3":    username,
+		"4":    after,
+		"5":    first}
+
+	query, args, err := buildQuery(`
+		SELECT id, email, username, followers_count, followees_count
+		{{ if .auth }}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{ end }}
+		FROM follows
+		INNER JOIN users on followee_id=users.id
+		{{ if .auth }}
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @1 AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @2
+		{{ end }}
+		WHERE follows.follower_id =(SELECT id from users where username = @3)
+		{{ if  .4 }}AND username > @4 {{ end }}
+		ORDER BY username ASC
+		LIMIT @5`, ints)
+	fmt.Println(query)
+	fmt.Println(args)
+	row, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+	uu := make([]UserProfile, 0, first)
+	for row.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		if ok {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+		if err := row.Scan(dest...); err != nil {
+			return uu, err
+		}
+		u.Me = ok && int64(uid) == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+		uu = append(uu, u)
+	}
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	return uu, nil
+}
