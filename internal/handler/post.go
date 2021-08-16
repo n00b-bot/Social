@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -37,4 +38,17 @@ func (h *handler) toggleLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, out, 200)
+}
+
+func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	username := way.Param(ctx, "username")
+	last, _ := strconv.Atoi(r.URL.Query().Get("last"))
+	before, _ := strconv.Atoi(r.URL.Query().Get("before"))
+	fmt.Println(username,last,before)
+	pp, err := h.Posts(ctx, username, last, before)
+	if err != nil {
+		respondError(w, err)
+	}
+	respond(w, pp, 200)
 }

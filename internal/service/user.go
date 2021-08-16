@@ -305,11 +305,15 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 	first = normalizePageSize(first)
 	ints := map[string]interface{}{
 		"auth": ok,
-		"1":    uid,
-		"2":    uid,
-		"3":    username,
-		"4":    after,
-		"5":    first}
+		"a1":   uid,
+		"a2":   uid,
+		"a3":   username,
+		"a5":   first,
+	}
+	if after != "" {
+		fmt.Print("1")
+		ints["a4"] = after
+	}
 
 	query, args, err := buildQuery(`
 		SELECT id, email, username, avatar,followers_count, followees_count
@@ -321,14 +325,17 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		INNER JOIN users on followee_id=users.id
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @1 AND followers.followee_id = users.id
+			ON followers.follower_id = @a1 AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @2
+			ON followees.follower_id = users.id AND followees.followee_id = @a2
 		{{ end }}
-		WHERE follows.follower_id =(SELECT id from users where username = @3)
-		{{ if  .4 }}AND username > @4 {{ end }}
+		WHERE follows.follower_id =(SELECT id from users where username = @a3)
+		{{ if  .a4 }}
+		AND username > @a4 
+		{{ end }}
 		ORDER BY username ASC
-		LIMIT @5`, ints)
+		LIMIT @a5`, ints)
+	fmt.Println(query)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

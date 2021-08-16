@@ -22,14 +22,16 @@ type ToggleLikeOutput struct {
 }
 
 type Post struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"-"`
-	Content   string    `json:"content"`
-	SpoilerOf *string   `json:"spoiler_of"`
-	NSFW      bool      `json:"nsfw"`
-	CreateAt  time.Time `json:"create_at"`
-	User      *User     `json:"user,omitempty"`
-	Mine      bool      `json:"mine"`
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"-"`
+	Content    string    `json:"content"`
+	SpoilerOf  *string   `json:"spoiler_of"`
+	LikesCount int       `json:"likes_count"`
+	NSFW       bool      `json:"nsfw"`
+	CreateAt   time.Time `json:"create_at"`
+	User       *User     `json:"user,omitempty"`
+	Mine       bool      `json:"mine"`
+	Liked      bool      `json:"liked"`
 }
 
 func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
@@ -145,6 +147,7 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 	defer tx.Rollback()
 	query := "SELECT EXISTS (SELECT 1 FROM post_likes WHERE user_id= ? and post_id =?)"
 	if err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&output.Liked); err != nil {
+		fmt.Println("1")
 		return output, nil
 	}
 	if output.Liked {
@@ -158,6 +161,7 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 		}
 		query = "select likes_count from posts where id= ?"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
+			fmt.Println("2")
 			return output, err
 		}
 	} else {
@@ -171,6 +175,7 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 		}
 		query = "select likes_count from posts where id= ?"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
+			fmt.Println("3")
 			return output, err
 		}
 	}
@@ -179,5 +184,61 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 	}
 	output.Liked = !output.Liked
 	return output, nil
+}
 
+func (s *Service) Posts(ctx context.Context, username string, last int, before int) ([]Post, error) {
+	var pp []Post
+	uid, auth := ctx.Value(KeyAuthUserID).(int)
+	last = normalizePageSize(last)
+
+	query, args, err := buildQuery(`
+		SELECT id,content,spoiler_of,nsfw,likes_count,create_at
+		{{ if .auth }}
+		,posts.user_id = @a1 as mine
+		,likes.user_id IS NOT NULL as liked
+		{{end}}
+		FROM posts
+		{{ if .auth }}
+		LEFT JOIN post_likes AS likes
+		 ON likes.user_id = @a2 AND likes.post_id=posts.id
+		{{end}}
+		WHERE posts.user_id = (SELECT id from users where username =@a3)
+		{{ if .a4}}
+		AND posts.id < @a4
+		{{end}}
+		ORDER BY create_at	DESC 
+		LIMIT @a5
+	`, map[string]interface{}{
+		"auth": auth,
+		"a1":   uid,
+		"a2":   uid,
+		"a3":   username,
+		"a4":   before,
+		"a5":   last,
+	})
+	fmt.Println(query)
+	fmt.Println(args...)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p Post
+		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreateAt}
+		if auth {
+			dest = append(dest, &p.Mine, &p.Liked)
+		}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, err
+		}
+		pp = append(pp, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return pp, nil
 }

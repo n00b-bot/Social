@@ -35,7 +35,14 @@ Content-Type: application/json
     "content":"hi again again"
 }
 ###
-POST {{host}}/api/posts/3/toggle_like
+POST {{host}}/api/users/nothing/posts?last=50&before=10
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
-
+###
+POST {{host}}/api/users/sub/followees?first=5&after=1
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+###
+GET {{host}}/api/users/all
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
