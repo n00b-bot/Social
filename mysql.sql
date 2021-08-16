@@ -21,6 +21,7 @@ create table posts (
     content varchar(255) not null,
     spoiler_of varchar(50),
     nsfw boolean not null,
+    likes_count int not null default 0,
     create_at timestamp not null default now()
     
 );
@@ -34,3 +35,9 @@ create table timeline (
 );
 
 create unique index timeline_unique on timeline (user_id,post_id);
+
+create table post_likes (
+    user_id int not null references users,
+    post_id int not null references posts,
+    primary key(user_id,post_id)
+)

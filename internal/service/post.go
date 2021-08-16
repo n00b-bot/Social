@@ -16,6 +16,11 @@ var (
 	ErrInvalidSpoiler = errors.New("Invalid spoler")
 )
 
+type ToggleLikeOutput struct {
+	Liked      bool
+	LikesCount int
+}
+
 type Post struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"-"`
@@ -125,4 +130,54 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 		return nil, err
 	}
 	return tt, nil
+}
+
+func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOutput, error) {
+	var output ToggleLikeOutput
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return output, ErrUnauthorized
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return output, err
+	}
+	defer tx.Rollback()
+	query := "SELECT EXISTS (SELECT 1 FROM post_likes WHERE user_id= ? and post_id =?)"
+	if err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&output.Liked); err != nil {
+		return output, nil
+	}
+	if output.Liked {
+		query = " DELETE FROM post_likes WHERE user_id= ? AND post_id= ?"
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return output, err
+		}
+		query = "UPDATE posts SET likes_count=likes_count-1 where id = ?"
+		if _, err = tx.ExecContext(ctx, query, postID); err != nil {
+			return output, err
+		}
+		query = "select likes_count from posts where id= ?"
+		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
+			return output, err
+		}
+	} else {
+		query = "INSERT INTO post_likes (user_id,post_id) values (?,?)"
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return output, err
+		}
+		query = "UPDATE posts SET likes_count=likes_count+1 where id = ?"
+		if _, err = tx.ExecContext(ctx, query, postID); err != nil {
+			return output, err
+		}
+		query = "select likes_count from posts where id= ?"
+		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
+			return output, err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return output, err
+	}
+	output.Liked = !output.Liked
+	return output, nil
+
 }

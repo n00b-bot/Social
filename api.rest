@@ -34,3 +34,8 @@ Content-Type: application/json
 {
     "content":"hi again again"
 }
+###
+POST {{host}}/api/posts/3/toggle_like
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+

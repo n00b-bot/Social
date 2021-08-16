@@ -3,6 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/matryer/way"
 )
 
 type inputPost struct {
@@ -24,4 +27,14 @@ func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, ti, 200)
 
+}
+func (h *handler) toggleLike(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	postID, _ := strconv.Atoi(way.Param(ctx, "post_id"))
+	out, err := h.TogglePostLike(ctx, postID)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, out, 200)
 }
