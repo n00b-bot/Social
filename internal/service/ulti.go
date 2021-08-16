@@ -46,7 +46,6 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 	for key, _ := range data {
 		if !strings.Contains(query, "@"+key) {
 			continue
-
 		}
 		i, _ := strconv.Atoi(key)
 		ints = append(ints, i)

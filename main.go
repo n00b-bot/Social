@@ -13,7 +13,7 @@ import (
 
 func main() {
 
-	db, err := sql.Open("mysql", "root:root@/backend")
+	db, err := sql.Open("mysql", "root:root@/backend?parseTime=true")
 	if err != nil {
 		fmt.Print(err)
 		return

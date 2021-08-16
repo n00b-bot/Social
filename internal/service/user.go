@@ -141,9 +141,10 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
 	var out UserProfile
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	var avatar sql.NullString
 	args := []interface{}{}
-	dest := []interface{}{&out.ID, &out.Username, &out.Email, &out.FolloweesCount, &out.FollowersCount}
-	query := "SELECT id,username, email,followees_count,followers_count "
+	dest := []interface{}{&out.ID, &out.Username, &out.Email, &avatar, &out.FolloweesCount, &out.FollowersCount}
+	query := "SELECT id,username, email,avatar,followees_count,followers_count "
 	if ok {
 		query += ", followers.follower_id IS NOT NULL as Following," +
 			"followees.followee_id IS NOT NULL AS Followeed "
@@ -164,6 +165,10 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		out.ID = 0
 		out.Email = ""
 	}
+	if avatar.Valid {
+		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		out.AvatarURL = &avatarURL
+	}
 	return out, nil
 
 }
@@ -180,7 +185,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		"5":    first}
 
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username,avatar, followers_count, followees_count
 		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -206,8 +211,9 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	defer row.Close()
 	uu := make([]UserProfile, 0, first)
 	for row.Next() {
+		var avatar sql.NullString
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if ok {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -218,6 +224,10 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
@@ -239,7 +249,7 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		"5":    first}
 
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username,avatar, followers_count, followees_count
 		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -262,10 +272,11 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		return nil, err
 	}
 	defer row.Close()
+	var avatar sql.NullString
 	uu := make([]UserProfile, 0, first)
 	for row.Next() {
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if ok {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -276,6 +287,10 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
@@ -297,7 +312,7 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		"5":    first}
 
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username, avatar,followers_count, followees_count
 		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -322,7 +337,8 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 	uu := make([]UserProfile, 0, first)
 	for row.Next() {
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		var avatar sql.NullString
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if ok {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -333,6 +349,10 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
@@ -347,11 +367,13 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	if !ok {
 		return "", ErrUnauthorized
 	}
+
 	img, format, err := image.Decode(r)
 	if err != nil {
 		fmt.Print("1")
 		return "", err
 	}
+
 	fmt.Print(format)
 	if format != "png" && format != "jpeg" {
 		return "", ErrAvatarType
@@ -394,4 +416,20 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	s.db.ExecContext(ctx, `UPDATE users SET avatar=? WHERE id=?`, avatar, uid)
 
 	return "http://localhost:3000/web/static/img/avatar" + avatar, nil
+}
+func (s *Service) userByID(ctx context.Context, uid int) (User, error) {
+	var user User
+	query := "SELECT username,avatar FROM users WHERE id=?"
+	var avatar sql.NullString
+	err := s.db.QueryRowContext(ctx, query, uid).Scan(&user.Username, &avatar)
+	user.ID = int64(uid)
+	if err != nil {
+		return user, err
+	}
+	if avatar.Valid {
+		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		user.AvatarURL = &avatarURL
+	}
+	return user, nil
+
 }

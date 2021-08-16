@@ -22,8 +22,9 @@ type LoginOutput struct {
 
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var output LoginOutput
-	query := "SELECT id,username FROM users WHERE email = ?"
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&output.AuthUser.ID, &output.AuthUser.Username)
+	query := "SELECT id,username,avatar FROM users WHERE email = ?"
+	var avatar sql.NullString
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&output.AuthUser.ID, &output.AuthUser.Username, &avatar)
 	if err == sql.ErrNoRows {
 		return output, ErrUserNotFound
 	}
@@ -32,7 +33,10 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 		return output, err
 
 	}
-
+	if avatar.Valid {
+		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		output.AuthUser.AvatarURL = &avatarURL
+	}
 	output.Expiration = time.Now().Add(TokenLifespan)
 	return output, nil
 }
@@ -55,11 +59,5 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	if !ok {
 		return user, ErrUnauthorized
 	}
-	query := "SELECT username FROM users WHERE id=?"
-	err := s.db.QueryRowContext(ctx, query, uid).Scan(&user.Username)
-	user.ID = int64(uid)
-	if err != nil {
-		return user, err
-	}
-	return user, nil
+	return s.userByID(ctx, uid)
 }

@@ -9,7 +9,15 @@ Content-Type: application/json
 }
 # @name login
 ###
-GET {{host}}/api/auth_user
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+    "Email":"binh@dot.com",
+    "Username":"binh"
+}
+###
+POST {{host}}/api/users/nothing/followers
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 
 ###
@@ -17,4 +25,12 @@ PUT {{host}}/api/auth_user/avatar
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: image/png
 
-< internal\service\Golang.png
+< assest\common.jpg
+###
+POST {{host}}/api/posts
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+
+{
+    "content":"hi again again"
+}
