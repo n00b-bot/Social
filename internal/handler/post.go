@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -45,8 +44,16 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	username := way.Param(ctx, "username")
 	last, _ := strconv.Atoi(r.URL.Query().Get("last"))
 	before, _ := strconv.Atoi(r.URL.Query().Get("before"))
-	fmt.Println(username,last,before)
 	pp, err := h.Posts(ctx, username, last, before)
+	if err != nil {
+		respondError(w, err)
+	}
+	respond(w, pp, 200)
+}
+func (h *handler) post(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	post_id, _ := strconv.Atoi(way.Param(ctx, "post_id"))
+	pp, err := h.Post(ctx, post_id)
 	if err != nil {
 		respondError(w, err)
 	}

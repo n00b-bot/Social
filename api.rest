@@ -39,7 +39,7 @@ POST {{host}}/api/users/nothing/posts?last=&before=19
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
 ###
-POST {{host}}/api/users/sub/followees?first=5&after=1
+POST {{host}}/api/users/nothing/followers?first=2&after='%23
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
 ###
@@ -48,6 +48,29 @@ Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANB
 Content-Type: application/json
 
 ###
-GET {{host}}/api/timeline?last=100&before=20
+GET {{host}}/api/timeline?last=&before=
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
+###
+GET {{host}}/api/posts/13/comments
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+
+{
+    "content":"hello"
+}
+
+###
+POST {{host}}/api/posts/13/toggle_like
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+###
+GET {{host}}/api/posts/13/
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+###
+POST {{host}}/api/comments/5/toggle_like
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Content-Type: application/json
+
+

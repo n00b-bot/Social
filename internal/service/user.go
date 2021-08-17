@@ -15,6 +15,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
+	"github.com/sanity-io/litter"
 )
 
 type ToggleFollow struct {
@@ -23,9 +24,9 @@ type ToggleFollow struct {
 }
 
 type User struct {
-	ID        int64
-	Username  string
-	AvatarURL *string
+	ID        int64   `json:"id,omitempty"`
+	Username  string  `json:"username,omitempty"`
+	AvatarURL *string `json:"avatar_url,omitempty"`
 }
 
 type UserProfile struct {
@@ -242,11 +243,11 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 	first = normalizePageSize(first)
 	ints := map[string]interface{}{
 		"auth": ok,
-		"1":    uid,
-		"2":    uid,
-		"3":    username,
-		"4":    after,
-		"5":    first}
+		"a1":   uid,
+		"a2":   uid,
+		"a3":   username,
+		"a4":   after,
+		"a5":   first}
 
 	query, args, err := buildQuery(`
 		SELECT id, email, username,avatar, followers_count, followees_count
@@ -258,15 +259,15 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		INNER JOIN users on follower_id=users.id
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @1 AND followers.followee_id = users.id
+			ON followers.follower_id = @a1 AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @2
+			ON followees.follower_id = users.id AND followees.followee_id = @a2
 		{{ end }}
-		WHERE follows.followee_id =(SELECT id from users where username = @3)
-		{{ if  .4 }}AND username > @4 {{ end }}
+		WHERE follows.followee_id =(SELECT id from users where username = @a3)
+		{{ if  .a4 }}AND username > @a4 {{ end }}
 		ORDER BY username ASC
-		LIMIT @5`, ints)
-
+		LIMIT @a5`, ints)
+	fmt.Println(litter.Sdump(args))
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

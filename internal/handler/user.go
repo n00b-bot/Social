@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"network/internal/service"
 	"strconv"
@@ -69,6 +70,7 @@ func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
 	username := way.Param(ctx, "username")
 	first, _ := strconv.Atoi(q.Get("first"))
 	after := q.Get("after")
+	fmt.Println(after)
 	uu, err := h.Follwers(r.Context(), username, first, after)
 	if err != nil {
 		respondError(w, err)

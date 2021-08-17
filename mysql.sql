@@ -22,6 +22,7 @@ create table posts (
     spoiler_of varchar(50),
     nsfw boolean not null,
     likes_count int not null default 0,
+    comments_count int not null default 0,
     create_at timestamp not null default now()
     
 );
@@ -40,4 +41,23 @@ create table post_likes (
     user_id int not null references users,
     post_id int not null references posts,
     primary key(user_id,post_id)
+)
+
+create table comments (
+	id SERIAL not null primary key,
+    user_id int not null references users,
+    post_id int not null references posts,
+    content varchar(255) not null,
+    likes_count int not null default 0,
+    create_at timestamp not null default now()
+    
+);
+
+create index sorted_comments on comments (create_at DESC);
+
+
+create table comment_likes (
+    user_id int not null references users,
+    comment_id int not null references comments,
+    primary key(user_id,comment_id)
 )

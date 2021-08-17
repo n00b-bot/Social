@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -22,16 +23,17 @@ type ToggleLikeOutput struct {
 }
 
 type Post struct {
-	ID         int64     `json:"id"`
-	UserID     int64     `json:"-"`
-	Content    string    `json:"content"`
-	SpoilerOf  *string   `json:"spoiler_of"`
-	LikesCount int       `json:"likes_count"`
-	NSFW       bool      `json:"nsfw"`
-	CreateAt   time.Time `json:"create_at"`
-	User       *User     `json:"user,omitempty"`
-	Mine       bool      `json:"mine"`
-	Liked      bool      `json:"liked"`
+	ID            int64     `json:"id"`
+	UserID        int64     `json:"-"`
+	Content       string    `json:"content"`
+	SpoilerOf     *string   `json:"spoiler_of"`
+	LikesCount    int       `json:"likes_count"`
+	CommentsCount int       `json:"comments_count"`
+	NSFW          bool      `json:"nsfw"`
+	CreateAt      time.Time `json:"create_at"`
+	User          *User     `json:"user,omitempty"`
+	Mine          bool      `json:"mine"`
+	Liked         bool      `json:"liked"`
 }
 
 func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
@@ -184,7 +186,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 	last = normalizePageSize(last)
 
 	query, args, err := buildQuery(`
-		SELECT id,content,spoiler_of,nsfw,likes_count,create_at
+		SELECT id,content,spoiler_of,nsfw,likes_count,comments_count,create_at
 		{{ if .auth }}
 		,posts.user_id = @a1 as mine
 		,likes.user_id IS NOT NULL as liked
@@ -218,7 +220,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 	defer rows.Close()
 	for rows.Next() {
 		var p Post
-		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreateAt}
+		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreateAt}
 		if auth {
 			dest = append(dest, &p.Mine, &p.Liked)
 		}
@@ -231,4 +233,48 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		return nil, err
 	}
 	return pp, nil
+}
+
+func (s *Service) Post(ctx context.Context, postID int) (Post, error) {
+	var p Post
+	uid, auth := ctx.Value(KeyAuthUserID).(int)
+	query, args, err := buildQuery(`
+		SELECT posts.id,content,spoiler_of,nsfw,likes_count,comments_count,create_at 
+		,users.username,users.avatar
+		{{ if .auth }}
+		,posts.user_id = @a1 as mine
+		,likes.user_id IS NOT NULL as liked
+		{{end}}
+		FROM posts
+		INNER JOIN users ON  posts.user_id = users.id
+		{{ if .auth }}
+		LEFT JOIN post_likes AS likes
+		 ON likes.user_id = @a2 AND likes.post_id=posts.id
+		{{end}}
+		WHERE posts.id = @a3
+		
+	`, map[string]interface{}{
+		"auth": auth,
+		"a1":   uid,
+		"a2":   uid,
+		"a3":   postID,
+	})
+	if err != nil {
+		return p, err
+	}
+	var u User
+	var avatar sql.NullString
+	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreateAt, &u.Username, &avatar}
+	if auth {
+		dest = append(dest, &p.Mine, &p.Liked)
+	}
+	if err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...); err != nil {
+		return p, err
+	}
+	if avatar.Valid {
+		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
+	p.User = &u
+	return p, nil
 }
