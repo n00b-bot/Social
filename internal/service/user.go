@@ -311,7 +311,6 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		"a5":   first,
 	}
 	if after != "" {
-		fmt.Print("1")
 		ints["a4"] = after
 	}
 
@@ -335,7 +334,6 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		{{ end }}
 		ORDER BY username ASC
 		LIMIT @a5`, ints)
-	fmt.Println(query)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -374,14 +372,11 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	if !ok {
 		return "", ErrUnauthorized
 	}
-
 	img, format, err := image.Decode(r)
 	if err != nil {
-		fmt.Print("1")
 		return "", err
 	}
 
-	fmt.Print(format)
 	if format != "png" && format != "jpeg" {
 		return "", ErrAvatarType
 	}
@@ -415,7 +410,6 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", err
 	}
 	if oldAvartar.Valid {
-		fmt.Print(oldAvartar.String)
 		if err = os.Remove(path.Join(AvatarDir, oldAvartar.String)); err != nil {
 			fmt.Print(err)
 		}

@@ -9,7 +9,6 @@ import (
 	"text/template"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/sanity-io/litter"
 )
 
 const (
@@ -37,7 +36,6 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		queriesCache[text] = t
 
 	}
-	fmt.Println(litter.Sdump(data))
 	var wr bytes.Buffer
 	if err := t.Execute(&wr, data); err != nil {
 		return "", nil, fmt.Errorf("could not apply sql query data: %w", err)
@@ -53,7 +51,6 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		query = strings.ReplaceAll(query, "@"+key, "?")
 	}
 	sort.Ints(ints)
-	fmt.Println(ints)
 	var args []interface{}
 	for _, key := range ints {
 

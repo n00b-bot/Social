@@ -40,7 +40,6 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 	if !ok {
 		return ti, ErrUnauthorized
 	}
-	fmt.Println(content)
 	content = strings.TrimSpace(content)
 	if content == "" || len([]rune(content)) > 480 {
 		return ti, ErrInvalidContent
@@ -106,13 +105,11 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 	query := "INSERT INTO timeline (user_id,post_id) select follower_id,? FROM follows where followee_id = ?"
 	if _, err := s.db.Exec(query, p.ID, p.UserID); err != nil {
-		fmt.Println("1")
 		return nil, err
 	}
 	query = "select id , user_id from timeline where post_id = (select post_id from timeline where id = last_insert_id()) and user_id != ?"
 	rows, err := s.db.Query(query, p.UserID)
 	if err != nil {
-		fmt.Println("2")
 		return nil, err
 	}
 	defer rows.Close()
@@ -120,7 +117,6 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 	for rows.Next() {
 		var ti TimelineItem
 		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
-			fmt.Println("3")
 			return nil, err
 		}
 		ti.PostID = p.ID
@@ -128,7 +124,6 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 		tt = append(tt, ti)
 	}
 	if err = rows.Err(); err != nil {
-		fmt.Println("4")
 		return nil, err
 	}
 	return tt, nil
@@ -147,7 +142,6 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 	defer tx.Rollback()
 	query := "SELECT EXISTS (SELECT 1 FROM post_likes WHERE user_id= ? and post_id =?)"
 	if err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&output.Liked); err != nil {
-		fmt.Println("1")
 		return output, nil
 	}
 	if output.Liked {
@@ -161,7 +155,6 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 		}
 		query = "select likes_count from posts where id= ?"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
-			fmt.Println("2")
 			return output, err
 		}
 	} else {
@@ -175,7 +168,6 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 		}
 		query = "select likes_count from posts where id= ?"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
-			fmt.Println("3")
 			return output, err
 		}
 	}
@@ -216,8 +208,6 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		"a4":   before,
 		"a5":   last,
 	})
-	fmt.Println(query)
-	fmt.Println(args...)
 	if err != nil {
 		return nil, err
 	}
