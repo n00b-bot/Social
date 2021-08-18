@@ -41,7 +41,7 @@ create table post_likes (
     user_id int not null references users,
     post_id int not null references posts,
     primary key(user_id,post_id)
-)
+);
 
 create table comments (
 	id SERIAL not null primary key,
@@ -60,4 +60,17 @@ create table comment_likes (
     user_id int not null references users,
     comment_id int not null references comments,
     primary key(user_id,comment_id)
-)
+);
+
+
+create table notifications (
+    id serial not null primary key,
+    user_id int not null references users,
+    actors json not null,
+    type varchar(50) not null,
+    isread boolean not null default false,
+    issued_at timestamp not null default now()
+);
+
+
+create index sorted_notifications on notifications (issued_at DESC);

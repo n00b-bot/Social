@@ -31,7 +31,7 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		var err error
 		t, err = template.New("query").Parse(text)
 		if err != nil {
-			return "", nil, fmt.Errorf("could not parse sql query template: %w", err)
+			return "", nil, err
 		}
 		queriesCache[text] = t
 

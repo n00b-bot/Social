@@ -17,7 +17,11 @@ Content-Type: application/json
     "Username":"binh"
 }
 ###
-POST {{host}}/api/users/nothing/followers
+GET {{host}}/api/auth_user
+Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+
+###
+POST {{host}}/api/users/sub/toggle_follow
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 
 ###

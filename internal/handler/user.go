@@ -21,7 +21,7 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		respondError(w, err)
 	}
-	err := h.CreateUser(r.Context(), input.Email, input.Username)
+	err := h.CreateUser(r.Context(), input.Username, input.Email)
 	if err != nil {
 		respondError(w, err)
 	}

@@ -31,6 +31,9 @@ func New(s *service.Service) http.Handler {
 	api.HandleFunc("GET", "/posts/:post_id/comments", h.comments)
 	api.HandleFunc("POST", "/comments/:comment_id/toggle_like", h.toggleLikeComment)
 	api.HandleFunc("GET", "/posts/:post_id/", h.post)
+	api.HandleFunc("GET", "/notifications", h.notifications)
+	api.HandleFunc("GET", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
+	api.HandleFunc("GET", "/mark_notification_as_read", h.markNotificationsAsRead)
 
 	r := way.NewRouter()
 	r.Handle("*", "/api...", http.StripPrefix("/api", h.AuthMiddleware(api)))

@@ -1,0 +1,31 @@
+@host=http://localhost:3000
+###
+
+POST http://localhost:3000/api/login
+Content-Type: application/json
+
+{
+    "email":"sub@dot.com"
+}
+
+###
+GET {{host}}/api/auth_user
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+
+###
+POST {{host}}/api/users/sub/toggle_follow
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+
+###
+GET {{host}}/api/notifications?last
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+
+###
+GET {{host}}/api/notifications/16/mark_as_read
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+
+###
+GET {{host}}/api/mark_notification_as_read
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+
+

@@ -133,7 +133,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 	out.Following = !out.Following
 	if out.Following {
-
+		go s.nofityFollow(follower_id, followee_id)
 	}
 	return out, nil
 
