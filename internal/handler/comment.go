@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -30,6 +31,10 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 
 }
 func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
+	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
+		h.subcribeToComment(w, r)
+		return
+	}
 	ctx := r.Context()
 	postID, _ := strconv.Atoi(way.Param(ctx, "post_id"))
 	last, _ := strconv.Atoi(r.URL.Query().Get("last"))
@@ -51,4 +56,26 @@ func (h *handler) toggleLikeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, cc, 200)
+}
+
+func (h *handler) subcribeToComment(w http.ResponseWriter, r *http.Request) {
+	f, ok := w.(http.Flusher)
+	if !ok {
+		respondError(w, errStreaming)
+		return
+	}
+	ctx := r.Context()
+	postID, _ := strconv.Atoi(way.Param(ctx, "post_id"))
+	cc := h.SubcribeToComment(ctx, postID)
+
+	header := r.Header
+	header.Set("Cache-Control", "no-cache")
+	header.Set("Connection", "keep-alive")
+	header.Set("Context-Type", "text/event-stream")
+
+	for c := range cc {
+		writeSSE(w, c)
+		f.Flush()
+
+	}
 }

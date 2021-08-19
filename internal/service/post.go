@@ -85,28 +85,31 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 	return ti, nil
 }
 
-func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
+func (s *Service) fanoutPost(p Post) {
 	query := "INSERT INTO timeline (user_id,post_id) select follower_id,$1 FROM follows where followee_id = $2 returning id,user_id"
 	rows, err := s.db.Query(query, p.ID, p.UserID)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return
 	}
 
 	defer rows.Close()
-	tt := []TimelineItem{}
 	for rows.Next() {
 		var ti TimelineItem
 		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
-			return nil, err
+			log.Println(err)
+			return
 		}
 		ti.PostID = p.ID
 		ti.Post = p
-		tt = append(tt, ti)
+		s.broadcastTimelineItem(ti)
+
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
+		log.Println(err)
+		return
 	}
-	return tt, nil
+
 }
 
 func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOutput, error) {

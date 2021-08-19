@@ -18,6 +18,11 @@ type Comment struct {
 	Mine       bool
 	Liked      bool
 }
+type commentClient struct {
+	comments chan Comment
+	postID   int
+	userID   *int
+}
 
 func (s *Service) CreateComment(ctx context.Context, postID int, content string) (Comment, error) {
 	var c Comment
@@ -187,4 +192,35 @@ func (s *Service) commentCreated(c Comment) {
 	c.Mine = false
 	go s.notifyComment(c)
 	go s.notifyCommentMention(c)
+	go s.broadcastComment(c)
+}
+
+func (s *Service) SubcribeToComment(ctx context.Context, postID int) chan Comment {
+
+	cc := make(chan Comment)
+	c := &commentClient{
+		comments: cc,
+		postID:   postID,
+	}
+	if uid, ok := ctx.Value(KeyAuthUserID).(int); ok {
+		c.userID = &uid
+	}
+	s.commentClient.Store(c, struct{}{})
+	go func() {
+		<-ctx.Done()
+		s.commentClient.Delete(c)
+		close(cc)
+	}()
+	return cc
+}
+
+func (s *Service) broadcastComment(c Comment) {
+
+	s.commentClient.Range(func(key, _ interface{}) bool {
+		client := key.(*commentClient)
+		if client.postID == c.PostID && !(client.userID != nil && *client.userID == c.UserID) {
+			client.comments <- c
+		}
+		return true
+	})
 }

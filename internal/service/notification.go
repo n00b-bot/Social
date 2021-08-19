@@ -20,6 +20,11 @@ type Notification struct {
 	IssuedAt time.Time
 }
 
+type notificationClient struct {
+	notifications chan Notification
+	userID        int
+}
+
 type ToggleSubcriptionOutput struct {
 	Subcribed bool
 }
@@ -94,6 +99,7 @@ func (s *Service) nofityFollow(followerID, followeeID int) {
 		log.Println(err.Error())
 		return
 	}
+	go s.broadcastNotification(n)
 }
 
 func (s *Service) Notifications(ctx context.Context, last int, before int) ([]Notification, error) {
@@ -199,7 +205,6 @@ func (s *Service) notifyComment(c Comment) {
 		return
 	}
 	defer rows.Close()
-	var nn []Notification
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, n.UserID, pq.Array(n.Actors), n.IssuedAt); err != nil {
@@ -208,13 +213,13 @@ func (s *Service) notifyComment(c Comment) {
 		}
 		n.Type = "comment"
 		n.PostID = &c.PostID
-		nn = append(nn, n)
-
+		go s.broadcastNotification(n)
 	}
 	if err = rows.Err(); err != nil {
 		log.Println(err)
 		return
 	}
+	go s.broadcastComment(c)
 }
 
 func (s *Service) TogglePostSubcription(ctx context.Context, postID int) (ToggleSubcriptionOutput, error) {
@@ -268,7 +273,6 @@ func (s *Service) notifyPostMention(p Post) {
 		return
 	}
 	defer rows.Close()
-	var nn []Notification
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, &n.IssuedAt); err != nil {
@@ -278,13 +282,12 @@ func (s *Service) notifyPostMention(p Post) {
 		n.Actors = actors
 		n.Type = "post_mention"
 		n.PostID = &p.ID
-		nn = append(nn, n)
+		s.broadcastNotification(n)
 	}
 	if err := rows.Err(); err != nil {
 		log.Println(err)
 		return
 	}
-	log.Printf("post notificatnion %v\n", nn)
 }
 
 func (s *Service) notifyCommentMention(c Comment) {
@@ -308,7 +311,6 @@ func (s *Service) notifyCommentMention(c Comment) {
 		return
 	}
 	defer rows.Close()
-	var nn []Notification
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
@@ -317,11 +319,40 @@ func (s *Service) notifyCommentMention(c Comment) {
 		}
 		n.Type = "comment_mention"
 		n.PostID = &c.PostID
-		nn = append(nn, n)
+		s.broadcastNotification(n)
 	}
 	if err := rows.Err(); err != nil {
 		log.Println(err)
 		return
 	}
-	log.Printf("comment notificatnion %v\n", nn)
+}
+
+func (s *Service) SubcribeToNotification(ctx context.Context) (chan Notification, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return nil, ErrUnauthorized
+	}
+	nn := make(chan Notification)
+	c := &notificationClient{
+		notifications: nn,
+		userID:        uid,
+	}
+	s.notificationClient.Store(c, struct{}{})
+	go func() {
+		<-ctx.Done()
+		s.notificationClient.Delete(c)
+		close(nn)
+	}()
+	return nn, nil
+}
+
+func (s *Service) broadcastNotification(n Notification) {
+
+	s.notificationClient.Range(func(key, _ interface{}) bool {
+		client := key.(*notificationClient)
+		if client.userID == n.UserID {
+			client.notifications <- n
+		}
+		return true
+	})
 }

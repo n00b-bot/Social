@@ -5,7 +5,7 @@ POST http://localhost:3000/api/login
 Content-Type: application/json
 
 {
-    "email":"john@dot.com"
+    "email":"test12@dot.com"
 }
 
 ###
@@ -13,8 +13,8 @@ POST http://localhost:3000/api/users
 Content-Type: application/json
 
 {
-    "Email":"test@dot.com",
-    "Username":"test"
+    "Email":"test12@dot.com",
+    "Username":"test12"
 }
 ###
 GET {{host}}/api/auth_user
@@ -36,14 +36,14 @@ Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"john say @john, @jane , @test"
+    "content":"test12"
 }
 ###
 POST {{host}}/api/users/john/posts
 Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
-POST {{host}}/api/users/john/toggle_follow
+POST {{host}}/api/users/jane/toggle_follow
 Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
@@ -61,7 +61,7 @@ Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"@john @jane @test"
+    "content":"@john abc"
 }
 
 ###

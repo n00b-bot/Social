@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -8,6 +9,10 @@ import (
 )
 
 func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
+	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
+		h.subcribeToNotification(w, r)
+		return
+	}
 	last, _ := strconv.Atoi(r.URL.Query().Get("last"))
 	before, _ := strconv.Atoi(r.URL.Query().Get("before"))
 	nn, err := h.Notifications(r.Context(), last, before)
@@ -36,4 +41,27 @@ func (h *handler) markNotificationsAsRead(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *handler) subcribeToNotification(w http.ResponseWriter, r *http.Request) {
+	f, ok := w.(http.Flusher)
+	if !ok {
+		respondError(w, errStreaming)
+		return
+	}
+	nn, err := h.SubcribeToNotification(r.Context())
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	header := r.Header
+	header.Set("Cache-Control", "no-cache")
+	header.Set("Connection", "keep-alive")
+	header.Set("Context-Type", "text/event-stream")
+
+	for n := range nn {
+		writeSSE(w, n)
+		f.Flush()
+
+	}
 }

@@ -60,4 +60,5 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 		return user, ErrUnauthorized
 	}
 	return s.userByID(ctx, uid)
+
 }

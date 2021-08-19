@@ -11,6 +11,10 @@ type TimelineItem struct {
 	PostID int  `json:"-"`
 	Post   Post `json:"post,omitempty"`
 }
+type timelineItemClient struct {
+	timeline chan TimelineItem
+	userId   int
+}
 
 func (s *Service) Timeline(ctx context.Context, last int, before int) ([]TimelineItem, error) {
 	var tt []TimelineItem
@@ -86,4 +90,33 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 	}
 	return tt, nil
 
+}
+func (s *Service) SubcribeToTimeline(ctx context.Context) (chan TimelineItem, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return nil, ErrUnauthorized
+	}
+	tt := make(chan TimelineItem)
+	c := &timelineItemClient{
+		timeline: tt,
+		userId:   uid,
+	}
+	s.timelineItemClients.Store(c, struct{}{})
+	go func() {
+		<-ctx.Done()
+		s.timelineItemClients.Delete(c)
+		close(tt)
+	}()
+	return tt, nil
+}
+
+func (s *Service) broadcastTimelineItem(ti TimelineItem) {
+
+	s.timelineItemClients.Range(func(key, _ interface{}) bool {
+		client := key.(*timelineItemClient)
+		if client.userId == ti.UserID {
+			client.timeline <- ti
+		}
+		return true
+	})
 }
