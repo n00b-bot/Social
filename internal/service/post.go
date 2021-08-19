@@ -34,6 +34,7 @@ type Post struct {
 	User          *User     `json:"user,omitempty"`
 	Mine          bool      `json:"mine"`
 	Liked         bool      `json:"liked"`
+	Subscribed    bool
 }
 
 func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
@@ -57,25 +58,23 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 		return ti, fmt.Errorf("cannot begin tx")
 	}
 	defer tx.Rollback()
-	query := "INSERT INTO posts (user_id,content,spoiler_of,nsfw) values (?,?,?,?)"
-	if _, err = tx.ExecContext(ctx, query, uid, content, spoilerOf, nsfw); err != nil {
+	query := "INSERT INTO posts (user_id,content,spoiler_of,nsfw) values ($1,$2,$3,$4) returning id,create_at"
+	if err = tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw).Scan(&ti.Post.ID, &ti.Post.CreateAt); err != nil {
 		return ti, err
 	}
-	query = "select id,create_at from posts where id = (select last_insert_id())"
-	if err = tx.QueryRowContext(ctx, query).Scan(&ti.Post.ID, &ti.Post.CreateAt); err != nil {
-		return ti, err
-	}
+	fmt.Print(ti.Post.ID)
 	ti.Post.UserID = int64(uid)
 	ti.Post.Content = content
 	ti.Post.SpoilerOf = spoilerOf
 	ti.Post.NSFW = nsfw
 	ti.Post.Mine = true
-	query = " insert into timeline (user_id,post_id) values (?,?)"
+	query = "insert into post_subcriptions (user_id,post_id) values ($1,$2)"
 	if _, err = tx.ExecContext(ctx, query, uid, ti.Post.ID); err != nil {
 		return ti, err
 	}
-	query = "select id from timeline where id = (select last_insert_id())"
-	if err = tx.QueryRowContext(ctx, query).Scan(&ti.ID); err != nil {
+	ti.Post.Subscribed = true
+	query = " insert into timeline (user_id,post_id) values ($1,$2) returning id"
+	if err = tx.QueryRowContext(ctx, query, uid, ti.Post.ID).Scan(&ti.ID); err != nil {
 		return ti, err
 	}
 	ti.UserID = int64(uid)
@@ -92,6 +91,7 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 		}
 		p.User = &uid
 		p.Mine = false
+		p.Subscribed = false
 		tt, err := s.fanoutPost(p)
 		if err != nil {
 			log.Println(err)
@@ -101,19 +101,17 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 			log.Println(litter.Sdump(ti))
 		}
 	}(ti.Post)
+
 	return ti, nil
 }
 
 func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
-	query := "INSERT INTO timeline (user_id,post_id) select follower_id,? FROM follows where followee_id = ?"
-	if _, err := s.db.Exec(query, p.ID, p.UserID); err != nil {
-		return nil, err
-	}
-	query = "select id , user_id from timeline where post_id = (select post_id from timeline where id = last_insert_id()) and user_id != ?"
-	rows, err := s.db.Query(query, p.UserID)
+	query := "INSERT INTO timeline (user_id,post_id) select follower_id,$1 FROM follows where followee_id = $2 returning id,user_id"
+	rows, err := s.db.Query(query, p.ID, p.UserID)
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 	tt := []TimelineItem{}
 	for rows.Next() {
@@ -142,33 +140,33 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int) (ToggleLikeOut
 		return output, err
 	}
 	defer tx.Rollback()
-	query := "SELECT EXISTS (SELECT 1 FROM post_likes WHERE user_id= ? and post_id =?)"
+	query := "SELECT EXISTS (SELECT 1 FROM post_likes WHERE user_id= $1 and post_id =$2)"
 	if err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&output.Liked); err != nil {
 		return output, nil
 	}
 	if output.Liked {
-		query = " DELETE FROM post_likes WHERE user_id= ? AND post_id= ?"
+		query = " DELETE FROM post_likes WHERE user_id= $1 AND post_id= $2"
 		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
 			return output, err
 		}
-		query = "UPDATE posts SET likes_count=likes_count-1 where id = ?"
+		query = "UPDATE posts SET likes_count=likes_count-1 where id = $1"
 		if _, err = tx.ExecContext(ctx, query, postID); err != nil {
 			return output, err
 		}
-		query = "select likes_count from posts where id= ?"
+		query = "select likes_count from posts where id= $1"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
 			return output, err
 		}
 	} else {
-		query = "INSERT INTO post_likes (user_id,post_id) values (?,?)"
+		query = "INSERT INTO post_likes (user_id,post_id) values ($1,$2)"
 		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
 			return output, err
 		}
-		query = "UPDATE posts SET likes_count=likes_count+1 where id = ?"
+		query = "UPDATE posts SET likes_count=likes_count+1 where id = $1"
 		if _, err = tx.ExecContext(ctx, query, postID); err != nil {
 			return output, err
 		}
-		query = "select likes_count from posts where id= ?"
+		query = "select likes_count from posts where id= $1"
 		if err = tx.QueryRowContext(ctx, query, postID).Scan(&output.LikesCount); err != nil {
 			return output, err
 		}
@@ -188,27 +186,29 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 	query, args, err := buildQuery(`
 		SELECT id,content,spoiler_of,nsfw,likes_count,comments_count,create_at
 		{{ if .auth }}
-		,posts.user_id = @a1 as mine
+		,posts.user_id = @uid as mine
 		,likes.user_id IS NOT NULL as liked
+		,subcriptions.user_id is not NULL as subscribed
 		{{end}}
 		FROM posts
 		{{ if .auth }}
 		LEFT JOIN post_likes AS likes
-		 ON likes.user_id = @a2 AND likes.post_id=posts.id
+		 ON likes.user_id = @uid AND likes.post_id=posts.id
+		 LEFT JOIN post_subcriptions AS subcriptions
+		 ON subcriptions.user_id = @uid AND subcriptions.post_id=posts.i
 		{{end}}
-		WHERE posts.user_id = (SELECT id from users where username =@a3)
-		{{ if .a4}}
-		AND posts.id < @a4
+		WHERE posts.user_id = (SELECT id from users where username =@username)
+		{{ if .before}}
+		AND posts.id < @before
 		{{end}}
 		ORDER BY create_at	DESC 
-		LIMIT @a5
+		LIMIT @last
 	`, map[string]interface{}{
-		"auth": auth,
-		"a1":   uid,
-		"a2":   uid,
-		"a3":   username,
-		"a4":   before,
-		"a5":   last,
+		"auth":     auth,
+		"uid":      uid,
+		"username": username,
+		"before":   before,
+		"last":     last,
 	})
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		var p Post
 		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreateAt}
 		if auth {
-			dest = append(dest, &p.Mine, &p.Liked)
+			dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, err
@@ -242,22 +242,24 @@ func (s *Service) Post(ctx context.Context, postID int) (Post, error) {
 		SELECT posts.id,content,spoiler_of,nsfw,likes_count,comments_count,create_at 
 		,users.username,users.avatar
 		{{ if .auth }}
-		,posts.user_id = @a1 as mine
+		,posts.user_id = @uid as mine
 		,likes.user_id IS NOT NULL as liked
+		,subcriptions.user_id is not null as Subscribed
 		{{end}}
 		FROM posts
 		INNER JOIN users ON  posts.user_id = users.id
 		{{ if .auth }}
 		LEFT JOIN post_likes AS likes
-		 ON likes.user_id = @a2 AND likes.post_id=posts.id
+		 ON likes.user_id = @uid AND likes.post_id=posts.id
+		 LEFT JOIN post_subcriptions AS subcriptions
+		 ON subcriptions.user_id = @uid AND subcriptions.post_id=posts.id
 		{{end}}
-		WHERE posts.id = @a3
+		WHERE posts.id = @post_id	
 		
 	`, map[string]interface{}{
-		"auth": auth,
-		"a1":   uid,
-		"a2":   uid,
-		"a3":   postID,
+		"auth":    auth,
+		"uid":     uid,
+		"post_id": postID,
 	})
 	if err != nil {
 		return p, err
@@ -266,7 +268,7 @@ func (s *Service) Post(ctx context.Context, postID int) (Post, error) {
 	var avatar sql.NullString
 	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreateAt, &u.Username, &avatar}
 	if auth {
-		dest = append(dest, &p.Mine, &p.Liked)
+		dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
 	}
 	if err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...); err != nil {
 		return p, err

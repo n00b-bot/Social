@@ -28,4 +28,11 @@ Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGt
 GET {{host}}/api/mark_notification_as_read
 Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
 
+###
+POST {{host}}/api/posts/1/comments
+Authorization: Bearer KCGB7FdUrfiFKnugNyWMaTz7v6IDGmC7AnaaZpySbiIlvtP39jv5ZfscGtMJdf
+Content-Type: application/json
 
+{
+    "content":"sub@dot.com"
+}

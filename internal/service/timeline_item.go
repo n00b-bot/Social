@@ -22,26 +22,27 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 
 	query, args, err := buildQuery(`
 		SELECT timeline.id,posts.id,content,spoiler_of,nsfw,likes_count,comments_count,create_at
-		,posts.user_id = @a1 as mine
+		,posts.user_id = @uid as mine
 		,likes.user_id IS NOT NULL as liked	
+		,subcriptions.user_id is not null as Subscribed
 		,users.username,users.avatar
 		FROM timeline 
 		INNER JOIN posts ON timeline.post_id = posts.id
 		INNER JOIN users ON posts.user_id = users.id 
 		LEFT JOIN post_likes AS likes
-		 ON likes.user_id = @a2 AND likes.post_id=posts.id
-		WHERE timeline.user_id=@a3
-		{{ if .a4}}
-		AND timeline.id < @a4
+		 ON likes.user_id = @uid AND likes.post_id=posts.id
+		 LEFT JOIN post_subcriptions AS subcriptions
+		 ON subcriptions.user_id = @uid AND subcriptions.post_id=posts.id
+		WHERE timeline.user_id=@uid
+		{{ if .before}}
+		AND timeline.id < @before
 		{{end}}
 		ORDER BY create_at	DESC 
-		LIMIT @a5
+		LIMIT @last
 	`, map[string]interface{}{
-		"a1": uid,
-		"a2": uid,
-		"a3": uid,
-		"a4": before,
-		"a5": last,
+		"uid":    uid,
+		"before": before,
+		"last":   last,
 	})
 	if err != nil {
 		return nil, err
@@ -66,6 +67,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 			&t.Post.CreateAt,
 			&t.Post.Mine,
 			&t.Post.Liked,
+			&t.Post.Subscribed,
 			&u.Username,
 			&avatar,
 		}

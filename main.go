@@ -7,13 +7,13 @@ import (
 	"network/internal/handler"
 	"network/internal/service"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/hako/branca"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 
-	db, err := sql.Open("mysql", "root:root@/backend?parseTime=true")
+	db, err := sql.Open("postgres", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 	if err != nil {
 		fmt.Print(err)
 		return

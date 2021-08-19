@@ -15,7 +15,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
-	"github.com/sanity-io/litter"
 )
 
 type ToggleFollow struct {
@@ -55,13 +54,13 @@ var (
 func (s *Service) CreateUser(ctx context.Context, username, email string) error {
 	username = strings.TrimSpace(username)
 	email = strings.TrimSpace(email)
-	query := "INSERT INTO users (username, email) VALUES (?, ?)"
+	query := "INSERT INTO users (username, email) VALUES ($1, $2)"
 	_, err := s.db.Exec(query, username, email)
 	if isUniqueViolation(err) {
 		return ErrUserTaken
 	}
 	if err != nil {
-
+		fmt.Println(err)
 		return fmt.Errorf("Can not create user: %v", username)
 	}
 	return nil
@@ -79,7 +78,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		return out, err
 	}
 	defer tx.Rollback()
-	query := "SELECT id FROM users WHERE username=?"
+	query := "SELECT id FROM users WHERE username=$1"
 	err = tx.QueryRowContext(ctx, query, username).Scan(&followee_id)
 
 	if err != nil {
@@ -88,42 +87,42 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	if follower_id == followee_id {
 		return out, ErrForbiddenFollow
 	}
-	query = "SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?)"
+	query = "SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)"
 	err = tx.QueryRowContext(ctx, query, follower_id, followee_id).Scan(&out.Following)
 	if err != nil {
 		return out, err
 	}
 	if out.Following {
-		query = "DELETE FROM follows where follower_id = ? AND followee_id =?"
+		query = "DELETE FROM follows where follower_id = $1 AND followee_id =$2"
 		if _, err = tx.ExecContext(ctx, query, follower_id, followee_id); err != nil {
 			return out, err
 		}
-		query = "UPDATE users SET followees_count = followees_count-1 WHERE id=?"
+		query = "UPDATE users SET followees_count = followees_count-1 WHERE id=$1"
 		if _, err = tx.ExecContext(ctx, query, follower_id); err != nil {
 			return out, err
 		}
-		query = "UPDATE users SET followers_count = followers_count-1 WHERE id=?"
+		query = "UPDATE users SET followers_count = followers_count-1 WHERE id=$1"
 		if _, err = tx.ExecContext(ctx, query, followee_id); err != nil {
 			return out, err
 		}
-		query = "SELECT followers_count FROM users WHERE id = ?"
+		query = "SELECT followers_count FROM users WHERE id = $1"
 		if err = tx.QueryRowContext(ctx, query, followee_id).Scan(&out.FollowersCount); err != nil {
 			return out, err
 		}
 	} else {
-		query = "INSERT INTO follows (follower_id,followee_id) VALUES (?,?)"
+		query = "INSERT INTO follows (follower_id,followee_id) VALUES ($1,$2)"
 		if _, err = tx.ExecContext(ctx, query, follower_id, followee_id); err != nil {
 			return out, err
 		}
-		query = "UPDATE users SET followees_count = followees_count+1 WHERE id=?"
+		query = "UPDATE users SET followees_count = followees_count+1 WHERE id=$1"
 		if _, err = tx.ExecContext(ctx, query, follower_id); err != nil {
 			return out, err
 		}
-		query = "UPDATE users SET followers_count = followers_count+1 WHERE id=?"
+		query = "UPDATE users SET followers_count = followers_count+1 WHERE id=$1"
 		if _, err = tx.ExecContext(ctx, query, followee_id); err != nil {
 			return out, err
 		}
-		query = "SELECT followers_count FROM users WHERE id = ?"
+		query = "SELECT followers_count FROM users WHERE id = $1"
 		if err = tx.QueryRowContext(ctx, query, followee_id).Scan(&out.FollowersCount); err != nil {
 			return out, err
 		}
@@ -143,7 +142,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	var out UserProfile
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
 	var avatar sql.NullString
-	args := []interface{}{}
+	args := []interface{}{username}
 	dest := []interface{}{&out.ID, &out.Username, &out.Email, &avatar, &out.FolloweesCount, &out.FollowersCount}
 	query := "SELECT id,username, email,avatar,followees_count,followers_count "
 	if ok {
@@ -153,11 +152,11 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 	query += " FROM Users "
 	if ok {
-		query += "LEFT JOIN follows AS followers ON followers.follower_id = ? AND followers.followee_id = users.id " +
-			" LEFT JOIN follows AS followees ON followees.follower_id =users.id AND followees.followee_id = ?"
-		args = append(args, uid, uid, username)
+		query += "LEFT JOIN follows AS followers ON followers.follower_id = $2 AND followers.followee_id = users.id " +
+			" LEFT JOIN follows AS followees ON followees.follower_id =users.id AND followees.followee_id = $2"
+		args = append(args, uid)
 	}
-	query += " WHERE username = ?"
+	query += " WHERE username = $1"
 	if err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...); err != nil {
 		return out, err
 	}
@@ -178,12 +177,12 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
 	first = normalizePageSize(first)
 	ints := map[string]interface{}{
-		"auth": ok,
-		"1":    uid,
-		"2":    uid,
-		"3":    search,
-		"4":    after,
-		"5":    first}
+		"auth":   ok,
+		"uid":    uid,
+		"search": search,
+		"first":  first,
+		"after":  after,
+	}
 
 	query, args, err := buildQuery(`
 		SELECT id, email, username,avatar, followers_count, followees_count
@@ -194,16 +193,16 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		FROM users
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @1 AND followers.followee_id = users.id
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @2
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{ end }}
-		{{ if or .3 .4 }}WHERE{{ end }}
-		{{ if .3 }} username LIKE concat('%', @3 ,'%'){{ end }}
-		{{ if and .3 .4 }}AND{{ end }}
-		{{ if .3 }}username > @4 {{ end }}
+		{{ if or .search .after }}WHERE{{ end }}
+		{{ if .search }} username ILIKE '%' || @search || '%' {{ end }}
+		{{ if and .search .after }}AND{{ end }}
+		{{ if .after }}username > @after {{ end }}
 		ORDER BY username ASC
-		LIMIT @5`, ints)
+		LIMIT @first`, ints)
 
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -242,12 +241,12 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
 	first = normalizePageSize(first)
 	ints := map[string]interface{}{
-		"auth": ok,
-		"a1":   uid,
-		"a2":   uid,
-		"a3":   username,
-		"a4":   after,
-		"a5":   first}
+		"auth":     ok,
+		"uid":      uid,
+		"username": username,
+		"first":    first,
+		"after":    after,
+	}
 
 	query, args, err := buildQuery(`
 		SELECT id, email, username,avatar, followers_count, followees_count
@@ -259,15 +258,14 @@ func (s *Service) Follwers(ctx context.Context, username string, first int, afte
 		INNER JOIN users on follower_id=users.id
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @a1 AND followers.followee_id = users.id
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @a2
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{ end }}
-		WHERE follows.followee_id =(SELECT id from users where username = @a3)
-		{{ if  .a4 }}AND username > @a4 {{ end }}
+		WHERE follows.followee_id =(SELECT id from users where username = @username)
+		{{ if  .after }}AND username > @after {{ end }}
 		ORDER BY username ASC
-		LIMIT @a5`, ints)
-	fmt.Println(litter.Sdump(args))
+		LIMIT @first`, ints)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -305,11 +303,11 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 	uid, ok := ctx.Value(KeyAuthUserID).(int)
 	first = normalizePageSize(first)
 	ints := map[string]interface{}{
-		"auth": ok,
-		"a1":   uid,
-		"a2":   uid,
-		"a3":   username,
-		"a5":   first,
+		"auth":     ok,
+		"uid":      uid,
+		"username": username,
+		"first":    first,
+		"after":    after,
 	}
 	if after != "" {
 		ints["a4"] = after
@@ -325,16 +323,16 @@ func (s *Service) Follwees(ctx context.Context, username string, first int, afte
 		INNER JOIN users on followee_id=users.id
 		{{ if .auth }}
 		LEFT JOIN follows AS followers
-			ON followers.follower_id = @a1 AND followers.followee_id = users.id
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
-			ON followees.follower_id = users.id AND followees.followee_id = @a2
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{ end }}
-		WHERE follows.follower_id =(SELECT id from users where username = @a3)
-		{{ if  .a4 }}
-		AND username > @a4 
+		WHERE follows.follower_id =(SELECT id from users where username = @username)
+		{{ if  .after }}
+		AND username > @after 
 		{{ end }}
 		ORDER BY username ASC
-		LIMIT @a5`, ints)
+		LIMIT @first`, ints)
 	row, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -406,7 +404,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", err
 	}
 	var oldAvartar sql.NullString
-	if err = s.db.QueryRowContext(ctx, `SELECT avatar FROM users WHERE id = ?`, uid).Scan(&oldAvartar); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT avatar FROM users WHERE id = $1`, uid).Scan(&oldAvartar); err != nil {
 		defer os.Remove(avatarPath)
 		return "", err
 	}
@@ -415,13 +413,13 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 			fmt.Print(err)
 		}
 	}
-	s.db.ExecContext(ctx, `UPDATE users SET avatar=? WHERE id=?`, avatar, uid)
+	s.db.ExecContext(ctx, `UPDATE users SET avatar=$1 WHERE id=$2`, avatar, uid)
 
 	return "http://localhost:3000/web/static/img/avatar" + avatar, nil
 }
 func (s *Service) userByID(ctx context.Context, uid int) (User, error) {
 	var user User
-	query := "SELECT username,avatar FROM users WHERE id=?"
+	query := "SELECT username,avatar FROM users WHERE id=$1"
 	var avatar sql.NullString
 	err := s.db.QueryRowContext(ctx, query, uid).Scan(&user.Username, &avatar)
 	user.ID = int64(uid)

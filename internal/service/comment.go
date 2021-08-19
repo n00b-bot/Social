@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 )
 
@@ -32,26 +33,26 @@ func (s *Service) CreateComment(ctx context.Context, postID int, content string)
 		return c, err
 	}
 	defer tx.Rollback()
-	query := "INSERT INTO comments (user_id,post_id,content) VALUES (?,?,?)"
-	if _, err := tx.ExecContext(ctx, query, uid, postID, content); err != nil {
-		return c, err
-	}
-	query = "SELECT id,create_at from comments WHERE id = (SELECT last_insert_id())"
-	if err = tx.QueryRowContext(ctx, query).Scan(&c.ID, &c.CreateAt); err != nil {
+	query := "INSERT INTO comments (user_id,post_id,content) VALUES ($1,$2,$3) returning id,create_at"
+	if err = tx.QueryRowContext(ctx, query, uid, postID, content).Scan(&c.ID, &c.CreateAt); err != nil {
 		return c, err
 	}
 	c.UserID = uid
 	c.PostID = postID
 	c.Content = content
 	c.Mine = true
-
-	query = "UPDATE posts SET comments_count= comments_count+1 where id = ?"
+	query = "insert into post_subcriptions (user_id,post_id) values ($1,$2) on conflict(user_id,post_id) DO NOTHING"
+	if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+		return c, err
+	}
+	query = "UPDATE posts SET comments_count= comments_count+1 where id = $1"
 	if _, err := tx.ExecContext(ctx, query, postID); err != nil {
 		return c, err
 	}
 	if err = tx.Commit(); err != nil {
 		return c, err
 	}
+	go s.commentCreated(c)
 	return c, nil
 }
 
@@ -65,28 +66,27 @@ func (s *Service) Comments(ctx context.Context, postID int, last int, before int
 	query, args, err := buildQuery(`
 		SELECT comments.id,content,likes_count,create_at,username,avatar
 		{{ if .auth }}
-		,comments.user_id =@a1 as mine
+		,comments.user_id =@uid as mine
 		,likes.user_id is not null as liked
 		{{end}}
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
 		{{if .auth }}
 		LEFT JOIN comment_likes AS likes 
-		ON likes.comment_id = comments.id AND likes.user_id =@a2 
+		ON likes.comment_id = comments.id AND likes.user_id =@uid 
 		{{end}}
-		WHERE comments.post_id = @a3
-		{{if .a4}}
-		AND comments.id < @a4
+		WHERE comments.post_id = @post_id
+		{{if .before}}
+		AND comments.id < @before
 		{{end}}
 		ORDER BY create_at DESC
-		LIMIT @a5
+		LIMIT @last
 	`, map[string]interface{}{
-		"a1":   uid,
-		"a2":   uid,
-		"a3":   postID,
-		"a4":   before,
-		"a5":   last,
-		"auth": ok,
+		"uid":     uid,
+		"post_id": postID,
+		"before":  before,
+		"last":    last,
+		"auth":    ok,
 	})
 	if err != nil {
 		return nil, err
@@ -138,34 +138,34 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentId int) (ToggleL
 		return output, err
 	}
 	query := `
-		SELECT EXISTS (SELECT 1 FROM comment_likes where user_id =? and comment_id =?)
+		SELECT EXISTS (SELECT 1 FROM comment_likes where user_id =$1 and comment_id =$2)
 	`
 	if err = tx.QueryRowContext(ctx, query, uid, commentId).Scan(&output.Liked); err != nil {
 		return output, err
 	}
 	if output.Liked {
-		query = " DELETE FROM comment_likes where user_id = ? and comment_id = ?"
+		query = " DELETE FROM comment_likes where user_id = $1 and comment_id = $2"
 		if _, err := tx.ExecContext(ctx, query, uid, commentId); err != nil {
 			return output, err
 		}
-		query = "UPDATE comments SET  likes_count =likes_count - 1 where id=?"
+		query = "UPDATE comments SET  likes_count =likes_count - 1 where id=$1"
 		if _, err := tx.ExecContext(ctx, query, commentId); err != nil {
 			return output, err
 		}
-		query = "SELECT likes_count FROM comments where id = ?"
+		query = "SELECT likes_count FROM comments where id = $1"
 		if err := tx.QueryRowContext(ctx, query, commentId).Scan(&output.LikesCount); err != nil {
 			return output, err
 		}
 	} else {
-		query = "INSERT INTO  comment_likes (user_id, comment_id) VALUES (?,?)"
+		query = "INSERT INTO  comment_likes (user_id, comment_id) VALUES ($1,$2)"
 		if _, err := tx.ExecContext(ctx, query, uid, commentId); err != nil {
 			return output, err
 		}
-		query = "UPDATE comments SET  likes_count =likes_count + 1 where id=?"
+		query = "UPDATE comments SET  likes_count =likes_count + 1 where id=$1"
 		if _, err := tx.ExecContext(ctx, query, commentId); err != nil {
 			return output, err
 		}
-		query = "SELECT likes_count FROM comments where id = ?"
+		query = "SELECT likes_count FROM comments where id = $1"
 		if err := tx.QueryRowContext(ctx, query, commentId).Scan(&output.LikesCount); err != nil {
 			return output, err
 		}
@@ -175,4 +175,15 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentId int) (ToggleL
 	}
 	output.Liked = !output.Liked
 	return output, nil
+}
+
+func (s *Service) commentCreated(c Comment) {
+	u, err := s.userByID(context.Background(), c.UserID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	c.User = &u
+	c.Mine = false
+	go s.notifyComment(c)
 }

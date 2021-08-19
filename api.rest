@@ -1,80 +1,93 @@
 @host=http://localhost:3000
 ###
-
+# @name login
 POST http://localhost:3000/api/login
 Content-Type: application/json
 
 {
-    "email":"nothing@dot.com"
+    "email":"john@dot.com"
 }
-# @name login
+
 ###
 POST http://localhost:3000/api/users
 Content-Type: application/json
 
 {
-    "Email":"binh@dot.com",
-    "Username":"binh"
+    "Email":"test3@dot.com",
+    "Username":"test3"
 }
 ###
 GET {{host}}/api/auth_user
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Authorization: Bearer {{login.response.body.Token}}
 
 ###
-POST {{host}}/api/users/sub/toggle_follow
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+GET  {{host}}/api/users/all?first
+Authorization: Bearer {{login.response.body.Token}}
 
 ###
 PUT {{host}}/api/auth_user/avatar
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: image/png
 
 < assest\common.jpg
 ###
-POST {{host}}/api/posts
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+GET {{host}}/api/posts/685735175484440577
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"hi again again"
+    "content":"john say hi"
 }
 ###
-POST {{host}}/api/users/nothing/posts?last=&before=19
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+POST {{host}}/api/users/john/posts
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
-POST {{host}}/api/users/nothing/followers?first=2&after='%23
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+POST {{host}}/api/users/john/toggle_follow
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
-GET {{host}}/api/users/all
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+GET   {{host}}/api/timeline
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 ###
-GET {{host}}/api/timeline?last=&before=
+GET {{host}}/api/timeline?last=&before=685735175489781762
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
 ###
-GET {{host}}/api/posts/13/comments
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+GET  {{host}}/api/posts/1
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"hello"
+    "content":"test2 again"
 }
 
 ###
-POST {{host}}/api/posts/13/toggle_like
+POST {{host}}/api/posts/685735175484440577/toggle_like
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
 ###
-GET {{host}}/api/posts/13/
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+
+POST {{host}}/api/posts/1/toggle_subcription
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
-POST {{host}}/api/comments/5/toggle_like
-Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
+GET {{host}}/api/notifications
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+###
+POST {{host}}/api/comments/685742727561216001/toggle_like
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+###
+GET {{host}}/api/notifications/685749370379763713/mark_as_read
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+###
+GET {{host}}/api/mark_notification_as_read
+Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 

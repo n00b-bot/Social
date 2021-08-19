@@ -22,7 +22,7 @@ type LoginOutput struct {
 
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var output LoginOutput
-	query := "SELECT id,username,avatar FROM users WHERE email = ?"
+	query := "SELECT id,username,avatar FROM users WHERE email = $1"
 	var avatar sql.NullString
 	err := s.db.QueryRowContext(ctx, query, email).Scan(&output.AuthUser.ID, &output.AuthUser.Username, &avatar)
 	if err == sql.ErrNoRows {

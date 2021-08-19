@@ -25,6 +25,7 @@ func New(s *service.Service) http.Handler {
 	api.HandleFunc("POST", "/users/:username/toggle_follow", h.toggleFollow)
 	api.HandleFunc("POST", "/posts", h.createPost)
 	api.HandleFunc("POST", "/posts/:post_id/toggle_like", h.toggleLike)
+	api.HandleFunc("POST", "/posts/:post_id/toggle_subcription", h.togglePostSubcription)
 	api.HandleFunc("POST", "/users/:username/posts", h.posts)
 	api.HandleFunc("GET", "/timeline", h.timeLine)
 	api.HandleFunc("POST", "/posts/:post_id/comments", h.createComment)

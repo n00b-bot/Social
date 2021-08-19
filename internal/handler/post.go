@@ -59,3 +59,13 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, pp, 200)
 }
+
+func (h *handler) togglePostSubcription(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	post_id, _ := strconv.Atoi(way.Param(ctx, "post_id"))
+	pp, err := h.TogglePostSubcription(ctx, post_id)
+	if err != nil {
+		respondError(w, err)
+	}
+	respond(w, pp, 200)
+}

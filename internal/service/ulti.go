@@ -3,8 +3,6 @@ package service
 import (
 	"bytes"
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -41,21 +39,15 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		return "", nil, fmt.Errorf("could not apply sql query data: %w", err)
 	}
 	query := wr.String()
-	var ints []int
-	for key, _ := range data {
+	var args []interface{}
+	for key, val := range data {
 		if !strings.Contains(query, "@"+key) {
 			continue
 		}
-		i, _ := strconv.Atoi(key[1:])
-		ints = append(ints, i)
-		query = strings.ReplaceAll(query, "@"+key, "?")
+		args = append(args, val)
+		query = strings.ReplaceAll(query, "@"+key, fmt.Sprintf("$%d", len(args)))
 	}
-	sort.Ints(ints)
-	var args []interface{}
-	for _, key := range ints {
 
-		args = append(args, data["a"+strconv.Itoa(key)])
-	}
 	return query, args, nil
 }
 

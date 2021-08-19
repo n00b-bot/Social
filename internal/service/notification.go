@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Notification struct {
@@ -14,8 +15,13 @@ type Notification struct {
 	UserID   int
 	Actors   []string
 	Type     string
-	IsRead   bool
+	PostID   *int
+	Read     bool
 	IssuedAt time.Time
+}
+
+type ToggleSubcriptionOutput struct {
+	Subcribed bool
 }
 
 func (s *Service) nofityFollow(followerID, followeeID int) {
@@ -26,7 +32,7 @@ func (s *Service) nofityFollow(followerID, followeeID int) {
 	}
 	defer tx.Rollback()
 	var actor string
-	query := "SELECT username from users WHERE id = ?"
+	query := "SELECT username from users WHERE id = $1"
 	if err = tx.QueryRow(query, followerID).Scan(&actor); err != nil {
 		log.Println(err.Error())
 		fmt.Println("actor")
@@ -36,9 +42,9 @@ func (s *Service) nofityFollow(followerID, followeeID int) {
 	fmt.Println(actor)
 	var notified bool
 	query = `SELECT exists 
-		(Select 1 from notifications where user_id = ? 
-			and ?  member of (actors) 
-			and type='follow')`
+		(Select 1 from notifications where user_id = $1 
+			and $2:::VARCHAR = any(actors)
+			and type = 'follow')`
 	if err = tx.QueryRow(query, followeeID, actor).Scan(&notified); err != nil {
 		fmt.Println("notified")
 		log.Println(err.Error())
@@ -48,9 +54,8 @@ func (s *Service) nofityFollow(followerID, followeeID int) {
 		fmt.Println("nothing")
 		return
 	}
-	fmt.Println(followeeID)
 	var nid int
-	query = `SELECT id from notifications where user_id = ?  and type ='follow' and isread=false`
+	query = `SELECT id from notifications where user_id = $1  and type ='follow' and read=false`
 	err = tx.QueryRow(query, followeeID).Scan(&nid)
 	if err != nil && err != sql.ErrNoRows {
 		fmt.Println("nid")
@@ -59,42 +64,27 @@ func (s *Service) nofityFollow(followerID, followeeID int) {
 	}
 	fmt.Println(nid)
 	var n Notification
-	//actors := []string{actor}
+	actors := []string{actor}
 	if err == sql.ErrNoRows {
 		fmt.Println("go insert")
-		query = `INSERT INTO notifications (user_id,actors,type) values (?,json_array(?),'follow')`
-		if _, err := tx.Exec(query, followeeID, actor); err != nil {
+		query = `INSERT INTO notifications (user_id,actors,type) values ($1,$2,'follow')
+		returning id ,issued_at`
+		if err := tx.QueryRow(query, followeeID, pq.Array(actors)).Scan(&n.ID, &n.IssuedAt); err != nil {
 			fmt.Println("insert")
 			log.Println(err.Error())
 			return
 		}
-		query = "SELECT id,issued_at from notifications WHERE id =last_insert_id()"
-		if err := tx.QueryRow(query).Scan(&n.ID, &n.IssuedAt); err != nil {
-			log.Println(err.Error())
-			fmt.Println("select")
-			return
-		}
-		//n.Actors = actors
+		n.Actors = actors
 	} else {
 		query = `
-			update notifications set actors=JSON_ARRAY_APPEND(actors,'$',?),issued_at = now() where id = ? 
+			update notifications set actors=array_prepend($1,notifications.actors),issued_at = now() where id = $2
+			returning actors,issued_at
 		`
-		if _, err := tx.Exec(query, actor, nid); err != nil {
-			fmt.Println("update")
-			log.Println(err.Error())
-			return
-		}
-		query = `
-			SELECT actors,issued_at from notifications where id = ?
-		`
-		var test string
-		fmt.Println(nid)
-		if err := tx.QueryRow(query, nid).Scan(&test, &n.IssuedAt); err != nil {
+		if err := tx.QueryRow(query, actor, nid).Scan(pq.Array(&n.Actors), &n.IssuedAt); err != nil {
 			log.Println(err.Error())
 			fmt.Println("actors")
 			return
 		}
-		fmt.Println(test)
 		n.ID = nid
 
 	}
@@ -114,16 +104,16 @@ func (s *Service) Notifications(ctx context.Context, last int, before int) ([]No
 	fmt.Println(uid)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT id,actors,type,isread,issued_at
+		SELECT id,actors,type,post_id,read,issued_at
 		FROM notifications
-		WHERE user_id = @a1
-		{{if .a2}} AND id < @a2 {{end}}
+		WHERE user_id = @uid
+		{{if .before}} AND id < @before {{end}}
 		ORDER BY issued_at DESC
-		LIMIT @a3`,
+		LIMIT @last`,
 		map[string]interface{}{
-			"a1": uid,
-			"a2": before,
-			"a3": last,
+			"uid":    uid,
+			"before": before,
+			"last":   last,
 		})
 	if err != nil {
 		fmt.Println("error")
@@ -137,23 +127,16 @@ func (s *Service) Notifications(ctx context.Context, last int, before int) ([]No
 	defer rows.Close()
 	var nn []Notification
 	for rows.Next() {
-		var actors string
 		var n Notification
 		if err = rows.Scan(
 			&n.ID,
-			&actors,
+			pq.Array(&n.Actors),
 			&n.Type,
-			&n.IsRead,
+			&n.PostID,
+			&n.Read,
 			&n.IssuedAt,
 		); err != nil {
 			return nil, err
-		}
-		fmt.Println(actors)
-		s := actors[1 : len(actors)-1]
-		a := strings.Split(s, ",")
-		for _, v := range a {
-			v = strings.ReplaceAll(v, " ", "")
-			n.Actors = append(n.Actors, v[1:len(v)-1])
 		}
 
 		nn = append(nn, n)
@@ -170,9 +153,12 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, nid int) error {
 		return ErrUnauthorized
 	}
 	query := `
-	UPDATE notifications set isread =true 
-	WHERE id = ? and user_id =?
+	UPDATE notifications set read =true 
+	WHERE id = $1 and user_id =$2
 	`
+	fmt.Println(nid)
+	fmt.Println(uid)
+
 	if _, err := s.db.Exec(query, nid, uid); err != nil {
 		return err
 	}
@@ -185,11 +171,81 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 		return ErrUnauthorized
 	}
 	query := `
-	UPDATE notifications set isread =true 
-	WHERE user_id =?
+	UPDATE notifications set read =true 
+	WHERE user_id =$1
 	`
 	if _, err := s.db.Exec(query, uid); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (s *Service) notifyComment(c Comment) {
+	actor := c.User.Username
+	query := `
+		INSERT INTO notifications (user_id, actors,type,post_id)
+		SELECT user_id,$1,'comment',$2 from post_subcriptions
+		WHERE post_subcriptions.user_id != $3
+		AND post_subcriptions.post_id= $2
+		ON CONFLICT (user_id,type,post_id,read) 
+		DO UPDATE SET actors=array_prepend($4,array_remove(notifications.actors,$4)),
+		issued_at=now()
+		returning id,user_id,actors,issued_at
+	`
+	actors := []string{actor}
+	rows, err := s.db.Query(query, pq.Array(actors), c.PostID, c.UserID, actor)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+	var nn []Notification
+	for rows.Next() {
+		var n Notification
+		if err = rows.Scan(&n.ID, n.UserID, pq.Array(n.Actors), n.IssuedAt); err != nil {
+			log.Println(err)
+			return
+		}
+		n.Type = "comment"
+		n.PostID = &c.PostID
+		nn = append(nn, n)
+
+	}
+	if err = rows.Err(); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (s *Service) TogglePostSubcription(ctx context.Context, postID int) (ToggleSubcriptionOutput, error) {
+	var o ToggleSubcriptionOutput
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return o, ErrUnauthorized
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return o, err
+	}
+	defer tx.Rollback()
+	query := "SELECT EXISTS (SELECT 1 FROM post_subcriptions where user_id = $1 and post_id = $2)"
+	if err = tx.QueryRowContext(ctx, query, uid, postID).Scan(&o.Subcribed); err != nil {
+		return o, err
+	}
+	if o.Subcribed {
+		query = " DELETE FROM post_subcriptions where user_id = $1 and post_id = $2"
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return o, nil
+		}
+	} else {
+		query = "INSERT INTO post_subcriptions (user_id, post_id) values ($1,$2)"
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return o, nil
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return o, err
+	}
+	o.Subcribed = !o.Subcribed
+	return o, nil
 }
