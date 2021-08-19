@@ -186,4 +186,5 @@ func (s *Service) commentCreated(c Comment) {
 	c.User = &u
 	c.Mine = false
 	go s.notifyComment(c)
+	go s.notifyCommentMention(c)
 }

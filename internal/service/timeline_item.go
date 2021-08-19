@@ -6,10 +6,10 @@ import (
 )
 
 type TimelineItem struct {
-	ID     int64 `json:"id,omitempty"`
-	UserID int64 `json:"-"`
-	PostID int64 `json:"-"`
-	Post   Post  `json:"post,omitempty"`
+	ID     int  `json:"id,omitempty"`
+	UserID int  `json:"-"`
+	PostID int  `json:"-"`
+	Post   Post `json:"post,omitempty"`
 }
 
 func (s *Service) Timeline(ctx context.Context, last int, before int) ([]TimelineItem, error) {

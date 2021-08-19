@@ -249,3 +249,79 @@ func (s *Service) TogglePostSubcription(ctx context.Context, postID int) (Toggle
 	o.Subcribed = !o.Subcribed
 	return o, nil
 }
+
+func (s *Service) notifyPostMention(p Post) {
+	mentions := collectionMentions(p.Content)
+	if len(mentions) == 0 {
+		return
+	}
+	actors := []string{p.User.Username}
+	rows, err := s.db.Query(`
+		INSERT INTO notifications (user_id,actors,type,post_id) 
+		SELECT users.id,$1,'post_mention',$2 from Users
+		where users.id != $3 and
+		username = any($4)
+		returning id ,user_id,issued_at
+	`, pq.Array(actors), p.ID, p.UserID, pq.Array(mentions))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+	var nn []Notification
+	for rows.Next() {
+		var n Notification
+		if err = rows.Scan(&n.ID, &n.UserID, &n.IssuedAt); err != nil {
+			log.Println(err)
+			return
+		}
+		n.Actors = actors
+		n.Type = "post_mention"
+		n.PostID = &p.ID
+		nn = append(nn, n)
+	}
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return
+	}
+	log.Printf("post notificatnion %v\n", nn)
+}
+
+func (s *Service) notifyCommentMention(c Comment) {
+	mentions := collectionMentions(c.Content)
+	if len(mentions) == 0 {
+		return
+	}
+	actors := c.User.Username
+	rows, err := s.db.Query(`
+		INSERT INTO notifications (user_id,actors,type,post_id) 
+		SELECT users.id,$1,'comment_mention',$2 from Users
+		where users.id != $3 and
+		username = any($4)	
+		ON CONFLICT (user_id,type,post_id,read) do UPDATE SET
+		actors=array_prepend($5,array_remove(notifications.actors,$5)),
+		issued_at=now()
+		returning id ,user_id,actors,issued_at
+	`, pq.Array([]string{actors}), c.PostID, c.UserID, pq.Array(mentions), actors)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+	var nn []Notification
+	for rows.Next() {
+		var n Notification
+		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
+			log.Println(err)
+			return
+		}
+		n.Type = "comment_mention"
+		n.PostID = &c.PostID
+		nn = append(nn, n)
+	}
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return
+	}
+	log.Printf("comment notificatnion %v\n", nn)
+}

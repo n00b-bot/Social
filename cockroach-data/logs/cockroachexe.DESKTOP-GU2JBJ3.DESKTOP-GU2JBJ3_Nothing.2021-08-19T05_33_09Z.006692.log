@@ -1,0 +1,236 @@
+I210819 05:33:09.953026 1 util/log/sync_buffer.go:70  [config] file created at: 2021/08/19 05:33:09
+I210819 05:33:09.953026 1 util/log/sync_buffer.go:70  [config] running on machine: DESKTOP-GU2JBJ3
+I210819 05:33:09.953026 1 util/log/sync_buffer.go:70  [config] binary: CockroachDB CCL v20.1.17 (x86_64-w64-mingw32, built 2021/05/17 16:42:38, go1.13.9)
+I210819 05:33:09.953026 1 util/log/sync_buffer.go:70  [config] arguments: [C:\cockroach\cockroach.exe start --insecure --host 127.0.0.1]
+I210819 05:33:09.953026 1 util/log/sync_buffer.go:70  line format: [IWEF]yymmdd hh:mm:ss.uuuuuu goid file:line msg utf8=✓
+I210819 05:33:09.953022 1 cli/start.go:1051  logging to directory C:\Users\Nothing\Desktop\network\cockroach-data\logs
+W210819 05:33:09.954731 1 cli/start.go:1100  RUNNING IN INSECURE MODE!
+
+- Your cluster is open for any client that can access 127.0.0.1.
+- Any user, even root, can log in without providing a password.
+- Any user, connecting as root, can read or write any data in your cluster.
+- There is no network encryption nor authentication, and thus no confidentiality.
+
+Check out how to secure your cluster: https://www.cockroachlabs.com/docs/v20.1/secure-a-cluster.html
+W210819 05:33:09.954771 1 cli/start.go:972  Using the default setting for --cache (128 MiB).
+  A significantly larger value is usually needed for good performance.
+  If you have a dedicated server a reasonable setting is --cache=.25 (1.9 GiB).
+I210819 05:33:09.954792 1 cli/start.go:1114  CockroachDB CCL v20.1.17 (x86_64-w64-mingw32, built 2021/05/17 16:42:38, go1.13.9)
+W210819 05:33:09.955342 1 cli/start.go:376  running 'cockroach start' without --join is deprecated.
+Consider using 'cockroach start-single-node' or 'cockroach init' instead.
+I210819 05:33:09.964147 1 server/config.go:404  system total memory: 7.8 GiB
+I210819 05:33:09.964212 1 server/config.go:406  server configuration:
+max offset             500000000
+cache size             128 MiB
+SQL memory pool size   1.9 GiB
+scan interval          10m0s
+scan min idle time     10ms
+scan max idle time     1s
+event log enabled      true
+I210819 05:33:09.964236 1 cli/start.go:957  process identity: uid S-1-5-21-3555808950-1563559068-697072965-1001, gid S-1-5-21-3555808950-1563559068-697072965-513
+I210819 05:33:09.964722 1 cli/start.go:525  starting cockroach node
+I210819 05:33:09.966071 31 storage/rocksdb.go:606  opening rocksdb instance at "C:\\Users\\Nothing\\Desktop\\network\\cockroach-data\\cockroach-temp202651779"
+I210819 05:33:10.295124 31 server/server.go:1075  [n?] monitoring forward clock jumps based on server.clock.forward_jump_check_enabled
+I210819 05:33:10.296783 31 storage/rocksdb.go:606  opening rocksdb instance at "C:\\Users\\Nothing\\Desktop\\network\\cockroach-data"
+I210819 05:33:10.749017 31 server/config.go:578  [n?] 1 storage engine initialized
+I210819 05:33:10.749024 31 server/config.go:581  [n?] RocksDB cache size: 128 MiB
+I210819 05:33:10.749028 31 server/config.go:581  [n?] store 0: RocksDB, max size 0 B, max open file limit 10000
+I210819 05:33:10.755513 31 server/server.go:1121  [n?] Sleeping till wall time 1629351190755478700 to catches up to 1629351190795096601 to ensure monotonicity. Delta: 39.617901ms
+I210819 05:33:10.797868 31 gossip/gossip.go:395  [n1] NodeDescriptor set to node_id:1 address:<network_field:"tcp" address_field:"127.0.0.1:26257" > attrs:<> locality:<> ServerVersion:<major_val:20 minor_val:1 patch:0 unstable:0 > build_tag:"v20.1.17" started_at:1629351190797722900 cluster_name:"" sql_address:<network_field:"tcp" address_field:"127.0.0.1:26257" > 
+W210819 05:33:10.831305 285 kv/kvserver/replica_range_lease.go:554  can't determine lease status due to node liveness error: node not in the liveness table
+github.com/cockroachdb/cockroach/pkg/kv/kvserver.init
+	/go/src/github.com/cockroachdb/cockroach/pkg/kv/kvserver/node_liveness.go:44
+runtime.doInit
+	/usr/local/go/src/runtime/proc.go:5222
+runtime.doInit
+	/usr/local/go/src/runtime/proc.go:5217
+runtime.doInit
+	/usr/local/go/src/runtime/proc.go:5217
+runtime.doInit
+	/usr/local/go/src/runtime/proc.go:5217
+runtime.doInit
+	/usr/local/go/src/runtime/proc.go:5217
+runtime.main
+	/usr/local/go/src/runtime/proc.go:190
+runtime.goexit
+	/usr/local/go/src/runtime/asm_amd64.s:1357
+W210819 05:33:10.831356 285 kv/kvserver/store.go:1643  [n1,s1,r6/1:/Table/{SystemCon…-11}] could not gossip system config: [NotLeaseHolderError] r6: replica (n1,s1):1 not lease holder; lease holder unknown
+I210819 05:33:10.833710 31 server/node.go:428  [n1] initialized store [n1,s1]: disk (capacity=118 GiB, available=40 GiB, used=6.7 MiB, logicalBytes=50 MiB), ranges=201, leases=0, queries=0.00, writes=0.00, bytesPerReplica={p10=0.00 p25=0.00 p50=0.00 p75=100.00 p90=515.00 pMax=50339620.00}, writesPerReplica={p10=0.00 p25=0.00 p50=0.00 p75=0.00 p90=0.00 pMax=0.00}
+I210819 05:33:10.833793 31 kv/kvserver/stores.go:256  [n1] read 0 node addresses from persistent storage
+I210819 05:33:10.838370 31 server/node.go:649  [n1] connecting to gossip network to verify cluster ID...
+I210819 05:33:10.838389 31 server/node.go:669  [n1] node connected via gossip and verified as part of cluster "eefe0bde-41cb-48a8-9934-e97c8491448b"
+I210819 05:33:10.841328 31 server/node.go:512  [n1] node=1: started with [<no-attributes>=C:\Users\Nothing\Desktop\network\cockroach-data] engine(s) and attributes []
+I210819 05:33:10.841432 31 server/goroutinedumper/goroutinedumper.go:120  [n1] writing goroutine dumps to C:\Users\Nothing\Desktop\network\cockroach-data\logs\goroutine_dump
+I210819 05:33:10.841469 31 server/heapprofiler/heapprofiler.go:45  [n1] writing go heap profiles to C:\Users\Nothing\Desktop\network\cockroach-data\logs\heap_profiler at least every 1h0m0s
+I210819 05:33:10.841476 31 server/heapprofiler/cgoprofiler.go:49  [n1] to enable jmalloc profiling: "export MALLOC_CONF=prof:true" or "ln -s prof:true /etc/malloc.conf"
+I210819 05:33:10.841483 31 server/heapprofiler/statsprofiler.go:50  [n1] writing memory stats to C:\Users\Nothing\Desktop\network\cockroach-data\logs\heap_profiler at last every 1h0m0s
+I210819 05:33:10.841541 31 server/server.go:1660  [n1] starting http server at 127.0.0.1:8080 (use: 127.0.0.1:8080)
+I210819 05:33:10.841550 31 server/server.go:1667  [n1] starting grpc/postgres server at 127.0.0.1:26257
+I210819 05:33:10.841562 323 sql/temporary_schema.go:470  [n1] running temporary object cleanup background job
+I210819 05:33:10.841581 31 server/server.go:1668  [n1] advertising CockroachDB node at 127.0.0.1:26257
+I210819 05:33:10.860550 31 server/server.go:1828  [n1] done ensuring all necessary migrations have run
+I210819 05:33:10.860573 31 server/server.go:2070  [n1] serving sql connections
+I210819 05:33:10.860665 358 sqlmigrations/migrations.go:668  [n1] starting wait for upgrade finalization before schema change job migration
+I210819 05:33:10.860715 31 cli/start.go:685  [config] clusterID: eefe0bde-41cb-48a8-9934-e97c8491448b
+I210819 05:33:10.860745 31 cli/start.go:694  node startup completed:
+CockroachDB node starting at 2021-08-19 05:33:10.8606338 +0000 UTC (took 0.9s)
+build:               CCL v20.1.17 @ 2021/05/17 16:42:38 (go1.13.9)
+webui:               http://127.0.0.1:8080
+sql:                 postgresql://root@127.0.0.1:26257?sslmode=disable
+RPC client flags:    C:\cockroach\cockroach.exe <client cmd> --host=127.0.0.1:26257 --insecure
+logs:                C:\Users\Nothing\Desktop\network\cockroach-data\logs
+temp dir:            C:\Users\Nothing\Desktop\network\cockroach-data\cockroach-temp202651779
+external I/O path:   C:\Users\Nothing\Desktop\network\cockroach-data\extern
+store[0]:            path=C:\Users\Nothing\Desktop\network\cockroach-data
+storage engine:      rocksdb
+status:              restarted pre-existing node
+clusterID:           eefe0bde-41cb-48a8-9934-e97c8491448b
+nodeID:              1
+I210819 05:33:10.861129 358 sqlmigrations/migrations.go:694  [n1] schema change job migration already complete
+I210819 05:33:10.871078 323 sql/temporary_schema.go:505  [n1] found 0 temporary schemas
+I210819 05:33:10.871109 323 sql/temporary_schema.go:508  [n1] early exiting temporary schema cleaner as no temporary schemas were found
+I210819 05:33:10.871123 323 sql/temporary_schema.go:509  [n1] completed temporary object cleanup job
+I210819 05:33:10.871144 323 sql/temporary_schema.go:586  [n1] temporary object cleaner next scheduled to run at 2021-08-19 06:03:10.8414197 +0000 UTC
+I210819 05:33:10.873073 356 server/server_update.go:55  [n1] no need to upgrade, cluster already at the newest version
+I210819 05:33:10.885693 347 sql/lease.go:1976  released orphaned table lease: {id:228 version:9 expiration:{Time:{wall:97729000 ext:63764948179 loc:<nil>}}}
+I210819 05:33:10.888801 359 sql/event_log.go:132  [n1] Event: "node_restart", target: 1, info: {Descriptor:{NodeID:1 Address:127.0.0.1:26257 Attrs: Locality: ServerVersion:20.1 BuildTag:v20.1.17 StartedAt:1629351190797722900 LocalityAddress:[] ClusterName: SQLAddress:127.0.0.1:26257} ClusterID:eefe0bde-41cb-48a8-9934-e97c8491448b StartedAt:1629351190797722900 LastUp:1629351093415930800}
+I210819 05:33:10.890374 351 sql/lease.go:1976  released orphaned table lease: {id:232 version:2 expiration:{Time:{wall:180813000 ext:63764948189 loc:<nil>}}}
+I210819 05:33:10.890400 350 sql/lease.go:1976  released orphaned table lease: {id:231 version:5 expiration:{Time:{wall:608253000 ext:63764948190 loc:<nil>}}}
+I210819 05:33:10.890488 349 sql/lease.go:1976  released orphaned table lease: {id:230 version:10 expiration:{Time:{wall:37787000 ext:63764948181 loc:<nil>}}}
+I210819 05:33:10.890491 348 sql/lease.go:1976  released orphaned table lease: {id:229 version:2 expiration:{Time:{wall:754858000 ext:63764948184 loc:<nil>}}}
+I210819 05:33:10.894073 170 sql/lease.go:1976  released orphaned table lease: {id:233 version:6 expiration:{Time:{wall:678168000 ext:63764948174 loc:<nil>}}}
+I210819 05:33:10.897263 808 sql/lease.go:1976  released orphaned table lease: {id:234 version:2 expiration:{Time:{wall:541822000 ext:63764948182 loc:<nil>}}}
+I210819 05:33:10.897271 835 sql/lease.go:1976  released orphaned table lease: {id:235 version:2 expiration:{Time:{wall:147904000 ext:63764948197 loc:<nil>}}}
+I210819 05:33:10.897313 353 sql/lease.go:1976  released orphaned table lease: {id:236 version:8 expiration:{Time:{wall:963371000 ext:63764948197 loc:<nil>}}}
+I210819 05:33:12.821877 117 gossip/gossip.go:1527  [n1] node has connected to cluster via gossip
+I210819 05:33:12.824077 117 kv/kvserver/stores.go:275  [n1] wrote 0 node addresses to persistent storage
+W210819 05:33:20.848661 325 server/status/runtime.go:447  [n1] unable to get file descriptor usage (will not try again): not implemented on windows
+I210819 05:33:21.148835 325 server/status/runtime.go:516  [n1] runtime stats: 93 MiB RSS, 210 goroutines, 62 MiB/208 KiB/79 MiB GO alloc/idle/total, 18 MiB/22 MiB CGO alloc/total, 0.0 CGO/sec, 0.0/0.0 %(u/s)time, 0.0 %gc (8x), 2.9 KiB/3.0 KiB (r/w)net
+I210819 05:33:30.841636 47 kv/kvserver/store.go:2486  [n1,s1] sstables (read amplification = 2):
+0 [ 444K 1 ]: 444K
+6 [   2M 1 ]: 2M
+I210819 05:33:30.841764 47 kv/kvserver/store.go:2487  [n1,s1] 
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) CompMergeCPU(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      1/0   444.39 KB   0.5      0.0     0.0      0.0       0.0      0.0       0.0   1.0      0.0      1.7      0.26              0.00         1    0.257       0      0
+  L6      1/0    2.08 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0      0.00              0.00         0    0.000       0      0
+ Sum      2/0    2.51 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   1.0      0.0      1.7      0.26              0.00         1    0.257       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   1.0      0.0      1.7      0.26              0.00         1    0.257       0      0
+
+** Compaction Stats [default] **
+Priority    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) CompMergeCPU(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+User      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      1.7      0.26              0.00         1    0.257       0      0
+Uptime(secs): 20.5 total, 20.5 interval
+Flush(GB): cumulative 0.000, interval 0.000
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.00 GB write, 0.02 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.3 seconds
+Interval compaction: 0.00 GB write, 0.02 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.3 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+estimated_pending_compaction_bytes: 0 B
+I210819 05:33:31.136045 325 server/status/runtime.go:516  [n1] runtime stats: 102 MiB RSS, 208 goroutines, 72 MiB/3.0 MiB/89 MiB GO alloc/idle/total, 19 MiB/24 MiB CGO alloc/total, 546.9 CGO/sec, 0.5/0.2 %(u/s)time, 0.0 %gc (0x), 3.5 KiB/4.5 KiB (r/w)net
+I210819 05:33:40.891091 355 jobs/registry.go:1226  job 685637482375380993: resuming execution
+I210819 05:33:40.895661 1323 jobs/registry.go:845  [n1] job 685637482375380993: stepping through state running with error <nil>
+I210819 05:33:40.899997 355 jobs/registry.go:1226  job 685756735601213441: resuming execution
+I210819 05:33:40.902103 1366 jobs/registry.go:845  [n1] job 685756735601213441: stepping through state running with error <nil>
+I210819 05:33:40.906361 355 jobs/registry.go:1226  job 685754556670574593: resuming execution
+I210819 05:33:40.908217 1375 jobs/registry.go:845  [n1] job 685754556670574593: stepping through state running with error <nil>
+I210819 05:33:40.912285 355 jobs/registry.go:1226  job 685635358312890369: resuming execution
+I210819 05:33:40.914462 1384 jobs/registry.go:845  [n1] job 685635358312890369: stepping through state running with error <nil>
+I210819 05:33:40.918425 355 jobs/registry.go:1226  job 685638448930684929: resuming execution
+I210819 05:33:40.920316 1005 jobs/registry.go:845  [n1] job 685638448930684929: stepping through state running with error <nil>
+I210819 05:33:40.924701 355 jobs/registry.go:1226  job 685637873905401857: resuming execution
+I210819 05:33:40.926894 1414 jobs/registry.go:845  [n1] job 685637873905401857: stepping through state running with error <nil>
+I210819 05:33:40.931788 355 jobs/registry.go:1226  job 685637432173428737: resuming execution
+I210819 05:33:40.934512 1423 jobs/registry.go:845  [n1] job 685637432173428737: stepping through state running with error <nil>
+I210819 05:33:40.940132 355 jobs/registry.go:1226  job 685636223655182337: resuming execution
+I210819 05:33:40.943283 1308 jobs/registry.go:845  [n1] job 685636223655182337: stepping through state running with error <nil>
+I210819 05:33:40.948313 355 jobs/registry.go:1226  job 685754976789495809: resuming execution
+I210819 05:33:40.950431 1446 jobs/registry.go:845  [n1] job 685754976789495809: stepping through state running with error <nil>
+I210819 05:33:40.954611 355 jobs/registry.go:1226  job 685747134689476609: resuming execution
+I210819 05:33:40.956684 1459 jobs/registry.go:845  [n1] job 685747134689476609: stepping through state running with error <nil>
+I210819 05:33:41.142612 325 server/status/runtime.go:516  [n1] runtime stats: 109 MiB RSS, 208 goroutines, 81 MiB/2.4 MiB/98 MiB GO alloc/idle/total, 19 MiB/24 MiB CGO alloc/total, 482.6 CGO/sec, 0.6/0.6 %(u/s)time, 0.0 %gc (0x), 8.8 KiB/7.6 KiB (r/w)net
+I210819 05:33:51.148841 325 server/status/runtime.go:516  [n1] runtime stats: 117 MiB RSS, 239 goroutines, 62 MiB/23 MiB/101 MiB GO alloc/idle/total, 21 MiB/26 MiB CGO alloc/total, 1458.5 CGO/sec, 2.0/0.6 %(u/s)time, 0.0 %gc (1x), 10 KiB/5.4 KiB (r/w)net
+I210819 05:34:01.146410 325 server/status/runtime.go:516  [n1] runtime stats: 121 MiB RSS, 239 goroutines, 70 MiB/15 MiB/101 MiB GO alloc/idle/total, 21 MiB/26 MiB CGO alloc/total, 593.2 CGO/sec, 0.8/0.5 %(u/s)time, 0.0 %gc (0x), 34 KiB/21 KiB (r/w)net
+I210819 05:34:10.841252 48 gossip/gossip.go:567  [n1] gossip status (ok, 1 node)
+gossip client (0/3 cur/max conns)
+gossip server (0/3 cur/max conns, infos 0/0 sent/received, bytes 0B/0B sent/received)
+gossip connectivity
+  n1 [sentinel];
+I210819 05:34:10.968069 355 jobs/registry.go:1226  job 685637547503943681: resuming execution
+I210819 05:34:10.971008 2035 jobs/registry.go:845  [n1] job 685637547503943681: stepping through state running with error <nil>
+I210819 05:34:10.974611 355 jobs/registry.go:1226  job 685754976986431489: resuming execution
+I210819 05:34:10.976629 2005 jobs/registry.go:845  [n1] job 685754976986431489: stepping through state running with error <nil>
+I210819 05:34:10.980573 355 jobs/registry.go:1226  job 685754490836320257: resuming execution
+I210819 05:34:10.982467 2054 jobs/registry.go:845  [n1] job 685754490836320257: stepping through state running with error <nil>
+I210819 05:34:10.986125 355 jobs/registry.go:1226  job 685754490850803713: resuming execution
+I210819 05:34:10.988192 1552 jobs/registry.go:845  [n1] job 685754490850803713: stepping through state running with error <nil>
+I210819 05:34:10.993397 355 jobs/registry.go:1226  job 685637432397103105: resuming execution
+I210819 05:34:10.996444 2011 jobs/registry.go:845  [n1] job 685637432397103105: stepping through state running with error <nil>
+I210819 05:34:11.001083 355 jobs/registry.go:1226  job 685756763480784897: resuming execution
+I210819 05:34:11.003011 2064 jobs/registry.go:845  [n1] job 685756763480784897: stepping through state running with error <nil>
+I210819 05:34:11.007389 355 jobs/registry.go:1226  job 685637778548916225: resuming execution
+I210819 05:34:11.009424 2146 jobs/registry.go:845  [n1] job 685637778548916225: stepping through state running with error <nil>
+I210819 05:34:11.012866 355 jobs/registry.go:1226  job 685637482126376961: resuming execution
+I210819 05:34:11.014737 2155 jobs/registry.go:845  [n1] job 685637482126376961: stepping through state running with error <nil>
+I210819 05:34:11.017982 355 jobs/registry.go:1226  job 685747134705631233: resuming execution
+I210819 05:34:11.019720 1993 jobs/registry.go:845  [n1] job 685747134705631233: stepping through state running with error <nil>
+I210819 05:34:11.024237 355 jobs/registry.go:1226  job 685637482141155329: resuming execution
+I210819 05:34:11.026104 2162 jobs/registry.go:845  [n1] job 685637482141155329: stepping through state running with error <nil>
+I210819 05:34:11.157335 325 server/status/runtime.go:516  [n1] runtime stats: 124 MiB RSS, 241 goroutines, 79 MiB/6.5 MiB/101 MiB GO alloc/idle/total, 21 MiB/27 MiB CGO alloc/total, 579.7 CGO/sec, 0.9/0.1 %(u/s)time, 0.0 %gc (0x), 3.3 KiB/3.3 KiB (r/w)net
+I210819 05:34:21.146842 325 server/status/runtime.go:516  [n1] runtime stats: 134 MiB RSS, 268 goroutines, 51 MiB/37 MiB/110 MiB GO alloc/idle/total, 22 MiB/27 MiB CGO alloc/total, 1241.4 CGO/sec, 1.9/0.2 %(u/s)time, 0.0 %gc (1x), 2.9 KiB/2.9 KiB (r/w)net
+I210819 05:34:31.148247 325 server/status/runtime.go:516  [n1] runtime stats: 134 MiB RSS, 268 goroutines, 59 MiB/31 MiB/110 MiB GO alloc/idle/total, 22 MiB/27 MiB CGO alloc/total, 602.8 CGO/sec, 0.6/0.5 %(u/s)time, 0.0 %gc (0x), 4.7 KiB/3.1 KiB (r/w)net
+I210819 05:34:41.031073 355 jobs/registry.go:1226  job 685747134740496385: resuming execution
+I210819 05:34:41.032902 2645 jobs/registry.go:845  [n1] job 685747134740496385: stepping through state running with error <nil>
+I210819 05:34:41.035499 355 jobs/registry.go:1226  job 685747134780932097: resuming execution
+I210819 05:34:41.037310 2509 jobs/registry.go:845  [n1] job 685747134780932097: stepping through state running with error <nil>
+I210819 05:34:41.040612 355 jobs/registry.go:1226  job 685766188864110593: resuming execution
+I210819 05:34:41.042266 2662 jobs/registry.go:845  [n1] job 685766188864110593: stepping through state running with error <nil>
+I210819 05:34:41.045799 355 jobs/registry.go:1226  job 685637778604752897: resuming execution
+I210819 05:34:41.047478 2671 jobs/registry.go:845  [n1] job 685637778604752897: stepping through state running with error <nil>
+I210819 05:34:41.050789 355 jobs/registry.go:1226  job 685634938520174593: resuming execution
+I210819 05:34:41.052452 2617 jobs/registry.go:845  [n1] job 685634938520174593: stepping through state running with error <nil>
+I210819 05:34:41.055942 355 jobs/registry.go:1226  job 685756763526070273: resuming execution
+I210819 05:34:41.057546 2654 jobs/registry.go:845  [n1] job 685756763526070273: stepping through state running with error <nil>
+I210819 05:34:41.061208 355 jobs/registry.go:1226  job 685755715631710209: resuming execution
+I210819 05:34:41.062908 2629 jobs/registry.go:845  [n1] job 685755715631710209: stepping through state running with error <nil>
+I210819 05:34:41.066345 355 jobs/registry.go:1226  job 685637547439095809: resuming execution
+I210819 05:34:41.068160 2696 jobs/registry.go:845  [n1] job 685637547439095809: stepping through state running with error <nil>
+I210819 05:34:41.071703 355 jobs/registry.go:1226  job 685754556739584001: resuming execution
+I210819 05:34:41.073345 2623 jobs/registry.go:845  [n1] job 685754556739584001: stepping through state running with error <nil>
+I210819 05:34:41.076634 355 jobs/registry.go:1226  job 685637778559565825: resuming execution
+I210819 05:34:41.078338 2723 jobs/registry.go:845  [n1] job 685637778559565825: stepping through state running with error <nil>
+I210819 05:34:41.144154 325 server/status/runtime.go:516  [n1] runtime stats: 135 MiB RSS, 268 goroutines, 67 MiB/24 MiB/110 MiB GO alloc/idle/total, 22 MiB/27 MiB CGO alloc/total, 474.0 CGO/sec, 0.3/0.5 %(u/s)time, 0.0 %gc (0x), 3.2 KiB/3.5 KiB (r/w)net
+I210819 05:34:51.155998 325 server/status/runtime.go:516  [n1] runtime stats: 135 MiB RSS, 299 goroutines, 80 MiB/13 MiB/110 MiB GO alloc/idle/total, 21 MiB/27 MiB CGO alloc/total, 1115.4 CGO/sec, 1.1/0.5 %(u/s)time, 0.0 %gc (0x), 18 KiB/9.2 KiB (r/w)net
+I210819 05:35:01.146511 325 server/status/runtime.go:516  [n1] runtime stats: 136 MiB RSS, 299 goroutines, 87 MiB/5.9 MiB/110 MiB GO alloc/idle/total, 21 MiB/27 MiB CGO alloc/total, 488.9 CGO/sec, 0.6/0.5 %(u/s)time, 0.0 %gc (0x), 4.2 KiB/4.5 KiB (r/w)net
+I210819 05:35:10.844833 48 gossip/gossip.go:567  [n1] gossip status (ok, 1 node)
+gossip client (0/3 cur/max conns)
+gossip server (0/3 cur/max conns, infos 0/0 sent/received, bytes 0B/0B sent/received)
+I210819 05:35:10.892560 3145 jobs/registry.go:845  [n1] job 685771688746221569: stepping through state running with error <nil>
+I210819 05:35:10.932565 3145 jobs/registry.go:845  [n1] job 685771688746221569: stepping through state succeeded with error <nil>
+I210819 05:35:10.939214 3145 jobs/registry.go:1000  [n1] job 685771688746221569: status succeeded after adoption finished
+I210819 05:35:11.085517 355 jobs/registry.go:1226  job 685637778533679105: resuming execution
+I210819 05:35:11.087486 3208 jobs/registry.go:845  [n1] job 685637778533679105: stepping through state running with error <nil>
+I210819 05:35:11.091464 355 jobs/registry.go:1226  job 685754976834551809: resuming execution
+I210819 05:35:11.093468 3270 jobs/registry.go:845  [n1] job 685754976834551809: stepping through state running with error <nil>
+I210819 05:35:11.097362 355 jobs/registry.go:1226  job 685635358431969281: resuming execution
+I210819 05:35:11.099191 3287 jobs/registry.go:845  [n1] job 685635358431969281: stepping through state running with error <nil>
+I210819 05:35:11.103097 355 jobs/registry.go:1226  job 685754490919190529: resuming execution
+I210819 05:35:11.104922 3213 jobs/registry.go:845  [n1] job 685754490919190529: stepping through state running with error <nil>
+I210819 05:35:11.108599 355 jobs/registry.go:1226  job 685754976774750209: resuming execution
+I210819 05:35:11.110430 3292 jobs/registry.go:845  [n1] job 685754976774750209: stepping through state running with error <nil>
+I210819 05:35:11.114863 355 jobs/registry.go:1226  job 685754556650618881: resuming execution
+I210819 05:35:11.116816 3362 jobs/registry.go:845  [n1] job 685754556650618881: stepping through state running with error <nil>
+I210819 05:35:11.120720 355 jobs/registry.go:1226  job 685755787999281153: resuming execution
+I210819 05:35:11.122565 3348 jobs/registry.go:845  [n1] job 685755787999281153: stepping through state running with error <nil>
+I210819 05:35:11.126418 355 jobs/registry.go:1226  job 685636223492554753: resuming execution
+I210819 05:35:11.128244 3320 jobs/registry.go:845  [n1] job 685636223492554753: stepping through state running with error <nil>
+I210819 05:35:11.131618 355 jobs/registry.go:1226  job 685766188884099073: resuming execution
+I210819 05:35:11.133348 3329 jobs/registry.go:845  [n1] job 685766188884099073: stepping through state running with error <nil>
+I210819 05:35:11.137039 355 jobs/registry.go:1226  job 685637873847861249: resuming execution
+I210819 05:35:11.138775 3340 jobs/registry.go:845  [n1] job 685637873847861249: stepping through state running with error <nil>
+I210819 05:35:11.159943 325 server/status/runtime.go:516  [n1] runtime stats: 139 MiB RSS, 299 goroutines, 54 MiB/37 MiB/113 MiB GO alloc/idle/total, 22 MiB/28 MiB CGO alloc/total, 624.4 CGO/sec, 0.8/0.3 %(u/s)time, 0.0 %gc (1x), 7.1 KiB/5.0 KiB (r/w)net

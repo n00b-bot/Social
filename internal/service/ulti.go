@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -16,6 +17,7 @@ const (
 )
 
 var queriesCache = make(map[string]*template.Template)
+var rxMentions = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
 
 func isUniqueViolation(err error) bool {
 	mysqll, ok := err.(*mysql.MySQLError)
@@ -62,4 +64,17 @@ func normalizePageSize(i int) int {
 		return maxPageSize
 	}
 	return i
+}
+
+func collectionMentions(s string) []string {
+	m := map[string]struct{}{}
+	u := []string{}
+	for _, submatches := range rxMentions.FindAllStringSubmatch(s, -1) {
+		val := submatches[1]
+		if _, ok := m[val]; !ok {
+			m[val] = struct{}{}
+			u = append(u, val)
+		}
+	}
+	return u
 }

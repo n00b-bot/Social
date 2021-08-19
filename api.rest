@@ -13,8 +13,8 @@ POST http://localhost:3000/api/users
 Content-Type: application/json
 
 {
-    "Email":"test3@dot.com",
-    "Username":"test3"
+    "Email":"test@dot.com",
+    "Username":"test"
 }
 ###
 GET {{host}}/api/auth_user
@@ -31,12 +31,12 @@ Content-Type: image/png
 
 < assest\common.jpg
 ###
-GET {{host}}/api/posts/685735175484440577
+POST  {{host}}/api/posts
 Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"john say hi"
+    "content":"john say @john, @jane , @test"
 }
 ###
 POST {{host}}/api/users/john/posts
@@ -56,12 +56,12 @@ GET {{host}}/api/timeline?last=&before=685735175489781762
 Authorization: Bearer KCG9jyp25SaBGJXpTBKvYVoA69ljUfl8FcK2blN4HPGeKb1oRYeBYgwANBE32W
 Content-Type: application/json
 ###
-GET  {{host}}/api/posts/1
+POST  {{host}}/api/posts/1/comments
 Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 
 {
-    "content":"test2 again"
+    "content":"@john @jane @test"
 }
 
 ###
