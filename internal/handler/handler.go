@@ -14,6 +14,8 @@ type handler struct {
 func New(s *service.Service) http.Handler {
 	h := handler{Service: s}
 	api := way.NewRouter()
+	api.HandleFunc("POST", "/send_magic_link", h.sendMailLink)
+	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
 	api.HandleFunc("GET", "/users/:username/profile", h.user)
 	api.HandleFunc("POST", "/login", h.login)
 	api.HandleFunc("GET", "/auth_user", h.authUser)

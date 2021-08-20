@@ -1,11 +1,12 @@
 @host=http://localhost:3000
 ###
 # @name login
-POST http://localhost:3000/api/login
+POST http://localhost:3000/api/send_magic_link
 Content-Type: application/json
 
 {
-    "email":"test12@dot.com"
+    "email":"john@dot.com",
+    "redirectURI": "http://localhost:3000/localhost"
 }
 
 ###
@@ -13,8 +14,8 @@ POST http://localhost:3000/api/users
 Content-Type: application/json
 
 {
-    "Email":"test12@dot.com",
-    "Username":"test12"
+    "Email":"john@dot.com",
+    "Username":"johnexa"
 }
 ###
 GET {{host}}/api/auth_user

@@ -12,6 +12,11 @@ type loginInput struct {
 	Email string
 }
 
+type sendMagicInput struct {
+	Email       string
+	RedirectURI string
+}
+
 func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	var in loginInput
 	defer r.Body.Close()
@@ -62,4 +67,29 @@ func (h *handler) authUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, u, 200)
+}
+
+func (h *handler) sendMailLink(w http.ResponseWriter, r *http.Request) {
+	var in sendMagicInput
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err := h.SendMagicLink(r.Context(), in.Email, in.RedirectURI)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	uri, err := h.AuthURI(r.Context(), q.Get("verification_code"), q.Get("redirect_uri"))
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	http.Redirect(w, r, uri, http.StatusFound)
 }

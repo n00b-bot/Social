@@ -25,7 +25,7 @@ create table posts (
     nsfw boolean not null default false,
     likes_count int not null default 0,
     comments_count int not null default 0,
-    create_at timestamp not null default now()
+    create_at timestamptz not null default now()
     
 );
 create index sorted_posts on posts (create_at DESC);
@@ -49,7 +49,7 @@ create table comments (
     post_id int not null references posts,
     content varchar not null,
     likes_count int not null default 0,
-    create_at timestamp not null default now()
+    create_at timestamptz not null default now()
     
 );
 
@@ -60,6 +60,12 @@ create table  post_subcriptions (
 );
 
 create index sorted_comments on comments (create_at DESC);
+
+create table verification_codes(
+    id uuid not null primary key default gen_random_uuid(),
+    user_id int not null references users,
+    create_at timestamptz not null default now()
+);
 
 
 create table comment_likes (
@@ -75,7 +81,7 @@ create table notifications (
     actors VARCHAR[] not null,
     type varchar not null,
     read boolean not null default false,
-    issued_at timestamp not null default now()
+    issued_at timestamptz not null default now()
 );
 create index sorted_notifications on notifications (issued_at DESC);
 create   UNIQUE INDEX unique_notifications on notifications (user_id, type, post_id, read);

@@ -1,9 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
+	"html/template"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -13,6 +16,9 @@ const (
 )
 
 var ErrUnauthorized = errors.New("Unauthorized")
+var MagicLinkTemplates *template.Template
+var MinutesExpired = time.Minute * 15
+var LinkExpired = errors.New("Link expired")
 
 type LoginOutput struct {
 	Token      string
@@ -61,4 +67,67 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	}
 	return s.userByID(ctx, uid)
 
+}
+
+func (s *Service) SendMagicLink(ctx context.Context, email, redirectURL string) error {
+	uri, err := url.ParseRequestURI(redirectURL)
+	if err != nil {
+		return err
+	}
+	var verification_code string
+	query := "INSERT INTO verification_codes (user_id)  (select id from users where email =$1) returning id"
+	if err := s.db.QueryRowContext(ctx, query, email).Scan(&verification_code); err != nil {
+		return err
+	}
+	magicLink, _ := url.Parse("http://localhost:3000")
+	magicLink.Path = "/api/auth_redirect"
+	q := magicLink.Query()
+	q.Set("verification_code", verification_code)
+	q.Set("redirect_uri", uri.String())
+	magicLink.RawQuery = q.Encode()
+	if MagicLinkTemplates == nil {
+		MagicLinkTemplates, err = template.ParseFiles("web/template/magic-link.html")
+		if err != nil {
+			return err
+		}
+	}
+	var mail bytes.Buffer
+	if err := MagicLinkTemplates.Execute(&mail, map[string]interface{}{
+		"MagicLink": magicLink.String(),
+		"Minutes":   int(MinutesExpired.Minutes()),
+	}); err != nil {
+		return err
+	}
+	return s.sendMail(email, "Magic Link", mail.String())
+}
+
+func (s *Service) AuthURI(ctx context.Context, verification_code, redirectURL string) (string, error) {
+	uri, err := url.ParseRequestURI(redirectURL)
+	if err != nil {
+		return "", err
+	}
+	var uid int
+	var ts time.Time
+	query := "DELETE FROM verification_codes where id = $1 returning user_id,create_at"
+	err = s.db.QueryRowContext(ctx, query, verification_code).Scan(&uid, &ts)
+	if err != nil {
+		return "", err
+	}
+	if ts.Add(MinutesExpired).Before(time.Now()) {
+		return "", LinkExpired
+	}
+	token, err := s.codec.EncodeToString(strconv.Itoa(uid))
+	if err != nil {
+		return "", err
+	}
+	exp, err := time.Now().Add(MinutesExpired).MarshalText()
+	if err != nil {
+		return "", err
+	}
+	f := url.Values{}
+	f.Set("token", token)
+	f.Set("expired_at", string(exp))
+	uri.Fragment = f.Encode()
+
+	return uri.String(), nil
 }
