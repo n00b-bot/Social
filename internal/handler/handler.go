@@ -14,7 +14,7 @@ type handler struct {
 }
 
 func New(s *service.Service, time time.Duration) http.Handler {
-	h := handler{Service: s}
+	h := handler{Service: s, ping: time}
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMailLink)
 	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)

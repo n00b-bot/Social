@@ -32,7 +32,6 @@ func main() {
 		fmt.Print(err)
 		return
 	}
-
 	s := service.New(service.Config{
 		Db:       db,
 		Secret:   "12345678123456781234567812345678",
