@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/matryer/way"
 )
@@ -73,9 +75,16 @@ func (h *handler) subcribeToComment(w http.ResponseWriter, r *http.Request) {
 	header.Set("Connection", "keep-alive")
 	header.Set("Context-Type", "text/event-stream")
 
-	for c := range cc {
-		writeSSE(w, c)
-		f.Flush()
-
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(h.ping):
+			fmt.Fprintf(w, "ping \n\n")
+			f.Flush()
+		case c := <-cc:
+			writeSSE(w, c)
+			f.Flush()
+		}
 	}
 }

@@ -47,3 +47,12 @@ func (h *handler) subcribeToTimeline(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+
+func (h *handler) unreadNotifications(w http.ResponseWriter, r *http.Request) {
+	unread, err := h.HasUnreadNotifications(r.Context())
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+	respond(w, unread, 200)
+}

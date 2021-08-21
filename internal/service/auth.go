@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"html/template"
+	"log"
 	"net/url"
 	"strconv"
 	"time"
@@ -98,6 +99,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURL string) 
 	}); err != nil {
 		return err
 	}
+	go s.deleteExpriredCode(verification_code)
 	return s.sendMail(email, "Magic Link", mail.String())
 }
 
@@ -130,4 +132,11 @@ func (s *Service) AuthURI(ctx context.Context, verification_code, redirectURL st
 	uri.Fragment = f.Encode()
 
 	return uri.String(), nil
+}
+
+func (s *Service) deleteExpriredCode(code string) {
+	<-time.After(time.Hour * 24)
+	if _, err := s.db.Exec(`DELETE FROM verification_codes WHERE id = $1`, code); err != nil {
+		log.Println(err)
+	}
 }

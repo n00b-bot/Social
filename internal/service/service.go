@@ -37,7 +37,8 @@ func New(cfg Config) *Service {
 		codec:    codec,
 		smtpAddr: net.JoinHostPort(cfg.SMTPHost, cfg.SMTPPort),
 		smtpAuth: smtp.PlainAuth("", cfg.SMTPuser, cfg.SMTPPass, cfg.SMTPHost),
-		noReply:"noreply@"+"dot.com",
+		noReply:  "noreply@" + "dot.com",
 	}
+
 	return service
 }

@@ -7,6 +7,7 @@ import (
 	"network/internal/handler"
 	"network/internal/service"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -40,8 +41,15 @@ func main() {
 		SMTPuser: SMTP_User,
 		SMTPPass: SMTP_Pass,
 	})
-	h := handler.New(s)
-	http.ListenAndServe(":3000", h)
+	server := http.Server{
+		Addr:              ":3000",
+		Handler:           handler.New(s, time.Second*15),
+		ReadHeaderTimeout: time.Second * 5,
+		ReadTimeout:       time.Second * 15,
+		WriteTimeout:      time.Second * 15,
+		IdleTimeout:       time.Second * 30,
+	}
+	server.ListenAndServe()
 }
 
 func env(key, defaultValue string) string {

@@ -356,3 +356,15 @@ func (s *Service) broadcastNotification(n Notification) {
 		return true
 	})
 }
+
+func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int)
+	if !ok {
+		return false, ErrUnauthorized
+	}
+	var unread bool
+	if err := s.db.QueryRowContext(ctx, `select exists (select 1 from notifications where user_id = $1 and read =false`, uid).Scan(&unread); err != nil {
+		return false, err
+	}
+	return unread, nil 
+}

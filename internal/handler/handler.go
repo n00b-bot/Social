@@ -3,15 +3,17 @@ package handler
 import (
 	"net/http"
 	"network/internal/service"
+	"time"
 
 	"github.com/matryer/way"
 )
 
 type handler struct {
 	*service.Service
+	ping time.Duration
 }
 
-func New(s *service.Service) http.Handler {
+func New(s *service.Service, time time.Duration) http.Handler {
 	h := handler{Service: s}
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMailLink)
@@ -37,8 +39,12 @@ func New(s *service.Service) http.Handler {
 	api.HandleFunc("GET", "/notifications", h.notifications)
 	api.HandleFunc("GET", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("GET", "/mark_notification_as_read", h.markNotificationsAsRead)
+	api.HandleFunc("GET", "/has_unread_notifications", h.unreadNotifications)
+
+	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
 
 	r := way.NewRouter()
 	r.Handle("*", "/api...", http.StripPrefix("/api", h.AuthMiddleware(api)))
+	r.Handle("GET", "/...", fs)
 	return r
 }
