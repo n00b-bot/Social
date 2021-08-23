@@ -60,7 +60,6 @@ func (s *Service) CreateUser(ctx context.Context, username, email string) error 
 		return ErrUserTaken
 	}
 	if err != nil {
-		fmt.Println(err)
 		return fmt.Errorf("Can not create user: %v", username)
 	}
 	return nil

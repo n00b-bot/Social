@@ -1,3 +1,27 @@
+
+:root {
+    --color-bg-root: black;
+    --color-text:white;
+    --color-bg-controls:rgb(37, 34, 41);
+    --color-accent:rgb(113, 24, 230);
+}
+
 body {
+    background-color: var(--color-bg-root);
+    color: var(--color-text);
     font-family: 'Courier New', Courier, monospace;
+}
+
+button,
+input {
+    background-color: var(--color-bg-controls);
+    border:none;
+    color:inherit;
+    padding: 0 1rem;
+    height:2rem;
+    border-radius:.25rem;
+}
+
+a {
+    color: var(--color-accent);
 }

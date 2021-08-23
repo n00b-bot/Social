@@ -23,7 +23,7 @@ var MinutesExpired = time.Minute * 15
 var LinkExpired = errors.New("Link expired")
 
 type LoginOutput struct {
-	Token      string
+	Token      string `json:"token"`
 	Expiration time.Time
 	AuthUser   User
 }

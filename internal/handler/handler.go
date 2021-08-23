@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime"
 	"net/http"
 	"network/internal/service"
 	"time"
@@ -43,8 +44,10 @@ func New(s *service.Service, time time.Duration) http.Handler {
 
 	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
 
+	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
+
 	r := way.NewRouter()
 	r.Handle("*", "/api...", http.StripPrefix("/api", h.AuthMiddleware(api)))
-	r.Handle("GET", "/...", fs)
+	r.Handle("GET", "/...", NoCache(fs))
 	return r
 }

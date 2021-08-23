@@ -60,7 +60,6 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 	if err = tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw).Scan(&ti.Post.ID, &ti.Post.CreateAt); err != nil {
 		return ti, err
 	}
-	fmt.Print(ti.Post.ID)
 	ti.Post.UserID = int64(uid)
 	ti.Post.Content = content
 	ti.Post.SpoilerOf = spoilerOf
