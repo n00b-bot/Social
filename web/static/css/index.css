@@ -4,6 +4,7 @@
     --color-text:white;
     --color-bg-controls:rgb(37, 34, 41);
     --color-accent:rgb(113, 24, 230);
+    --color-border:rgb(111, 17, 17);
 }
 
 body {
@@ -24,4 +25,102 @@ input {
 
 a {
     color: var(--color-accent);
+}
+
+.container {
+    max-width: 65ch;
+    margin : 0 auto;
+    
+}
+
+.container.wide {
+    max-width: 120ch;
+}
+
+.button-form-button {
+    margin-top: .5rem;
+}
+
+
+.post-list {
+    list-style: none;
+    margin: 0;
+    padding:0;
+}
+
+.post-item + .post-item{ 
+    border-top: solid 1px var(--color-border);
+}
+
+.post {
+    padding: 1rem;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between; 
+
+}
+
+.post-header time{
+    font-size: .875rem;
+}
+
+.post-header a ,
+.post-controls a
+{
+    color: inherit;
+    text-decoration: none;
+}
+
+.avatar {
+    width:3rem;
+    height:3rem;
+    border-radius: 50%;
+}
+
+.avatar[data-initial] {
+    background-color: var(--color-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color:var(--color-text)
+}
+
+
+.avatar[data-initial]::after {
+    content:attr(data-initial)
+}
+
+
+.post-header .avatar{
+    margin-right: .5rem;
+}
+
+.post-content {
+    margin: 1rem 0;
+}
+
+.post-controls {
+    display: flex;
+    align-items: center;
+}
+
+
+.post-controls > * + *  {
+  margin-left: 1rem;
+}
+
+.like-button::after {
+    content:'🔥';
+}
+
+.comment-link::after {
+    content:'🙊';
+}
+
+.timeline-load-more-button {
+     margin-left: 15rem;
+    
 }

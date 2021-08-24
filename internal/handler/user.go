@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"network/internal/service"
 	"strconv"
@@ -11,8 +10,8 @@ import (
 )
 
 type createUserInput struct {
-	Email    string
-	Username string
+	Email    string `json:"email"`
+	Username string `json:"username"`
 }
 
 func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
@@ -20,10 +19,12 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		respondError(w, err)
+		return
 	}
 	err := h.CreateUser(r.Context(), input.Username, input.Email)
 	if err != nil {
 		respondError(w, err)
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 
@@ -70,7 +71,6 @@ func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
 	username := way.Param(ctx, "username")
 	first, _ := strconv.Atoi(q.Get("first"))
 	after := q.Get("after")
-	fmt.Println(after)
 	uu, err := h.Follwers(r.Context(), username, first, after)
 	if err != nil {
 		respondError(w, err)

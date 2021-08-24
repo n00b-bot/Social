@@ -79,7 +79,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 			return nil, err
 		}
 		if avatar.Valid {
-			avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+			avatarURL := "http://localhost:3000" + "/img/avatar/" + avatar.String
 			u.AvatarURL = &avatarURL
 		}
 		t.Post.User = &u

@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"html/template"
 	"log"
 	"net/url"
@@ -36,14 +35,13 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 	if err == sql.ErrNoRows {
 		return output, ErrUserNotFound
 	}
-	fmt.Println(output.AuthUser.ID)
 	output.Token, err = s.codec.EncodeToString(strconv.FormatInt(output.AuthUser.ID, 10))
 	if err != nil {
 		return output, err
 
 	}
 	if avatar.Valid {
-		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		avatarURL := "http://localhost:3000" + "/img/avatar/" + avatar.String
 		output.AuthUser.AvatarURL = &avatarURL
 	}
 	output.Expiration = time.Now().Add(TokenLifespan)

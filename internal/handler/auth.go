@@ -25,25 +25,33 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out, err := h.Login(r.Context(), in.Email)
+	if err == service.ErrUserNotFound {
+		http.Error(w, `{ "error": "user not found" }`, http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		respondError(w, err)
 		return
 	}
-	if err == service.ErrUserNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+
 	respond(w, out, 200)
 }
 
 func (h *handler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if !strings.HasPrefix(token, "Bearer ") {
+		token := strings.TrimSpace(r.URL.Query().Get("token"))
+		if token == "" {
+			token = r.Header.Get("Authorization")
+			if !strings.HasPrefix(token, "Bearer ") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			token = token[7:]
+		}
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		token = token[7:]
 		id, err := h.TokenDecode(token)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)

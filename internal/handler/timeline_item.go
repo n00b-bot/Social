@@ -36,16 +36,18 @@ func (h *handler) subcribeToTimeline(w http.ResponseWriter, r *http.Request) {
 		respondError(w, err)
 		return
 	}
-	header := r.Header
+	//ctx := r.Context()
+	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
-	header.Set("Context-Type", "text/event-stream")
+	header.Set("Content-Type", "text/event-stream")
 
 	for ti := range tt {
 		writeSSE(w, ti)
 		f.Flush()
 
 	}
+
 }
 
 func (h *handler) unreadNotifications(w http.ResponseWriter, r *http.Request) {

@@ -1,11 +1,11 @@
 @host=http://localhost:3000
 ###
 # @name login
-POST http://localhost:3000/api/send_magic_link
+POST http://localhost:3000/api/dev_login
 Content-Type: application/json
 
 {
-    "email":"john@dot.com",
+    "email":"jane@example.org",
     "redirectURI": "http://localhost:3000/localhost"
 }
 
@@ -13,31 +13,31 @@ Content-Type: application/json
 POST http://localhost:3000/api/users
 Content-Type: application/json
 
-{
-    "Email":"john@dot.com",
-    "Username":"johnexa"
-}
+
+    {"email":"john@dot.com11","username":"test1"}
+
+
 ###
 GET {{host}}/api/auth_user
-Authorization: Bearer {{login.response.body.Token}}
+Authorization: Bearer KCGEUVuCH9pbhxdGeKJDDK9jisnbPocJ9wBNHhs4xMxDOoNxxO6eoq2e7VimkQ
 
 ###
 GET  {{host}}/api/users/all?first
-Authorization: Bearer {{login.response.body.Token}}
+Authorization: Bearer {{login.response.body.token}}
 
 ###
 PUT {{host}}/api/auth_user/avatar
-Authorization: Bearer {{login.response.body.Token}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: image/png
 
 < assest\common.jpg
 ###
 POST  {{host}}/api/posts
-Authorization: Bearer {{login.response.body.Token}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
-    "content":"test12"
+    "content":""
 }
 ###
 POST {{host}}/api/users/john/posts
@@ -45,11 +45,11 @@ Authorization: Bearer {{login.response.body.Token}}
 Content-Type: application/json
 ###
 POST {{host}}/api/users/jane/toggle_follow
-Authorization: Bearer {{login.response.body.Token}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 ###
-GET   {{host}}/api/timeline
-Authorization: Bearer {{login.response.body.Token}}
+GET   {{host}}/api/timeline?before=&last=3
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 ###
