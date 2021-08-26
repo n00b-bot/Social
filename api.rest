@@ -44,7 +44,7 @@ GET {{host}}/api/users/john/posts?before=687531694435139585&last=3
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 ###
-POST {{host}}/api/users/jane/toggle_follow
+GET {{host}}/api/users/jane/followers
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 ###

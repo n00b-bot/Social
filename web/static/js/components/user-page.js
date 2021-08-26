@@ -47,13 +47,15 @@ export default async function renderPage(params) {
 /**
  * @param {import('../type.js').UserProfile} username
 */
-function renderUser(user) {
+export function renderUser(user) {
         const authenticated = isAuthUser()
         const div = document.createElement("div")
-        console.log(user)
+        
         div.className='user-profile'
         div.innerHTML=`
+            <a href='/users/${user.username}'>
            ${renderAvatarHTML(user)} 
+           </a>
            <div class="center">
                 <div>
                 
@@ -93,7 +95,6 @@ function renderUser(user) {
                         followButton.disabled = false
                     }
             }
-            console.log(1)
             followButton.addEventListener('click',onFollowButtonClick)
         }
         return div
