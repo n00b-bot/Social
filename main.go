@@ -42,11 +42,9 @@ func main() {
 	})
 	server := http.Server{
 		Addr:              ":3000",
-		Handler:           handler.New(s, time.Second*15),
+		Handler:           handler.New(s, time.Second),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
-		WriteTimeout:      time.Second * 15,
-		IdleTimeout:       time.Second * 30,
 	}
 	server.ListenAndServe()
 }

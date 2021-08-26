@@ -32,7 +32,7 @@ export default async function renderPage() {
   const onPostFormSubmit = async (ev) => {
     ev.preventDefault();
     const content = postFormArea.value;
-    console.log(content);
+;
     postFormArea.disabled = true;
     postFormButton.disabled = true;
     try {
@@ -47,7 +47,7 @@ export default async function renderPage() {
         postFormArea.focus();
       });
     } catch (err) {
-      console.error(err);
+  ;
       alert(err.message);
     } finally {
       postFormArea.disabled = false;
@@ -56,6 +56,7 @@ export default async function renderPage() {
   };
   const onLoadMoreButtonClick = async () => {
     const lastTimelineItem = timeline[timeline.length - 1];
+    console.log(lastTimelineItem.id)
     const newTimelineItem = await http.timeline(lastTimelineItem.id);
     timeline.push(...newTimelineItem);
     for (const timelineItem of newTimelineItem) {
@@ -78,10 +79,10 @@ export default async function renderPage() {
     );
   };
   const unsubscribe = http.timelineSubscription(onTimelineItemArrive);
+;
   postForm.addEventListener("submit", onPostFormSubmit);
   loadMoreButton.addEventListener("click", onLoadMoreButtonClick);
   page.addEventListener("disconnect", () => {
-    console.log("home page disconnect");
     unsubscribe();
   });
   return page;

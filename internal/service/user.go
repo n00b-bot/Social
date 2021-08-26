@@ -159,15 +159,17 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	if err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...); err != nil {
 		return out, err
 	}
+
 	out.Me = ok && int64(uid) == out.ID
-	if out.Me {
+	if !out.Me {
 		out.ID = 0
 		out.Email = ""
 	}
 	if avatar.Valid {
-		avatarURL := "http://localhost:3000" + "/img/avatars" + avatar.String
+		avatarURL := "http://localhost:3000" + "/img/avatar/" + avatar.String
 		out.AvatarURL = &avatarURL
 	}
+
 	return out, nil
 
 }

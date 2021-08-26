@@ -6,7 +6,6 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/matryer/way"
 )
@@ -70,21 +69,14 @@ func (h *handler) subcribeToComment(w http.ResponseWriter, r *http.Request) {
 	postID, _ := strconv.Atoi(way.Param(ctx, "post_id"))
 	cc := h.SubcribeToComment(ctx, postID)
 
-	header := r.Header
+	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
-	header.Set("Context-Type", "text/event-stream")
+	header.Set("Content-Type", "text/event-stream")
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(h.ping):
-			fmt.Fprintf(w, "ping \n\n")
-			f.Flush()
-		case c := <-cc:
-			writeSSE(w, c)
-			f.Flush()
-		}
+	for c := range cc {
+		fmt.Println(c)
+		writeSSE(w, c)
+		f.Flush()
 	}
 }

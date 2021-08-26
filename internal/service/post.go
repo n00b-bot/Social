@@ -32,7 +32,7 @@ type Post struct {
 	User          *User     `json:"user,omitempty"`
 	Mine          bool      `json:"mine"`
 	Liked         bool      `json:"liked"`
-	Subscribed    bool
+	Subscribed    bool      `json:"subscribed"`
 }
 
 func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
@@ -177,7 +177,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		LEFT JOIN post_likes AS likes
 		 ON likes.user_id = @uid AND likes.post_id=posts.id
 		 LEFT JOIN post_subcriptions AS subcriptions
-		 ON subcriptions.user_id = @uid AND subcriptions.post_id=posts.i
+		 ON subcriptions.user_id = @uid AND subcriptions.post_id=posts.id
 		{{end}}
 		WHERE posts.user_id = (SELECT id from users where username =@username)
 		{{ if .before}}

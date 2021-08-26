@@ -69,11 +69,11 @@ async function Register(email, username) {
   username = username.trim();
   try {
     await http.register(email, username);
-    console.log(http.login(email));
+ ;
     saveLogin(await http.login(email));
     location.reload();
   } catch (err) {
-    console.error(err);
+  ;
     alert(err.message);
   }
 }

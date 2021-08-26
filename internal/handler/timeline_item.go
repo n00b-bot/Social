@@ -45,7 +45,6 @@ func (h *handler) subcribeToTimeline(w http.ResponseWriter, r *http.Request) {
 	for ti := range tt {
 		writeSSE(w, ti)
 		f.Flush()
-
 	}
 
 }

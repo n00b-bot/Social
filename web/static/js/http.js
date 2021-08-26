@@ -2,7 +2,7 @@ import {isAuthUser} from './auth.js'
 import {parseJSON, stringifyJSON} from './lib/json.js';
 import {isObject} from './utils.js';
 export function doGet(url,headers) {
-    console.log(localStorage.getItem('token'))
+   
     return fetch(url,{
         headers: Object.assign(defaultHeaders(),headers)
     }).then(parseResponse)
@@ -50,7 +50,7 @@ async function parseResponse(response){
         err['url'] = response.url
         throw err
     }
-    console.log(body)
+  
     return body
 }
 
@@ -62,8 +62,10 @@ export function subscribe(url,cb) {
     }
     const eventSource = new EventSource(url)
     eventSource.onmessage = ev => {
-        try {
+        try { 
+       
             cb(parseJSON(ev.data))
+           
 
         }catch (_) {}
     }

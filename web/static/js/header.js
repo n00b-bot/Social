@@ -6,11 +6,13 @@ const authenticated = authUser !== null;
 
 header.innerHTML = `
     <nav>
-        <a href="/">HOME</a>
+        <a href="/">HOME</a>     
+        <a href="/search">Search</a>
         ${
           authenticated
             ? `<a href="/users/${authUser.username}">profile</a>
         <button id="logout-button">Logout</button>
+   
         `
             : ""
         }
