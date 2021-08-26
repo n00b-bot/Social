@@ -10,10 +10,12 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/hako/branca"
 )
 
 const (
-	TokenLifespan = time.Hour * 24 * 14
+	TokenLifespan = time.Second * 10
 )
 
 var ErrUnauthorized = errors.New("Unauthorized")
@@ -35,7 +37,7 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 	if err == sql.ErrNoRows {
 		return output, ErrUserNotFound
 	}
-	output.Token, err = s.codec.EncodeToString(strconv.FormatInt(output.AuthUser.ID, 10))
+	output.Token, err = s.codec().EncodeToString(strconv.FormatInt(output.AuthUser.ID, 10))
 	if err != nil {
 		return output, err
 
@@ -49,7 +51,7 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 }
 
 func (s *Service) TokenDecode(token string) (int, error) {
-	id, err := s.codec.DecodeToString(token)
+	id, err := s.codec().DecodeToString(token)
 	if err != nil {
 		return 0, err
 	}
@@ -118,7 +120,7 @@ func (s *Service) AuthURI(ctx context.Context, verification_code, redirectURL st
 	if ts.Add(MinutesExpired).Before(time.Now()) {
 		return "", LinkExpired
 	}
-	token, err := s.codec.EncodeToString(strconv.Itoa(uid))
+	token, err := s.codec().EncodeToString(strconv.Itoa(uid))
 	if err != nil {
 		return "", err
 	}
@@ -139,4 +141,10 @@ func (s *Service) deleteExpriredCode(code string) {
 	if _, err := s.db.Exec(`DELETE FROM verification_codes WHERE id = $1`, code); err != nil {
 		log.Println(err)
 	}
+}
+
+func (s *Service) codec() *branca.Branca {
+	cdc := branca.NewBranca(s.tokenKey)
+	cdc.SetTTL(uint32(TokenLifespan.Seconds()))
+	return cdc
 }

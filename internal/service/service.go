@@ -5,13 +5,11 @@ import (
 	"net"
 	"net/smtp"
 	"sync"
-
-	"github.com/hako/branca"
 )
 
 type Service struct {
 	db                  *sql.DB
-	codec               *branca.Branca
+	tokenKey            string
 	noReply             string
 	smtpAddr            string
 	smtpAuth            smtp.Auth
@@ -30,11 +28,9 @@ type Config struct {
 }
 
 func New(cfg Config) *Service {
-	codec := branca.NewBranca(cfg.Secret)
-	codec.SetTTL(uint32(TokenLifespan.Seconds()))
 	service := &Service{
 		db:       cfg.Db,
-		codec:    codec,
+		tokenKey: cfg.Secret,
 		smtpAddr: net.JoinHostPort(cfg.SMTPHost, cfg.SMTPPort),
 		smtpAuth: smtp.PlainAuth("", cfg.SMTPuser, cfg.SMTPPass, cfg.SMTPHost),
 		noReply:  "noreply@" + "dot.com",
